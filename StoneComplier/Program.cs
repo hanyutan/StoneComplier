@@ -50,6 +50,7 @@ namespace StoneComplier
         {
             //test_lexer();
             test_expr_parser();
+            test_op_precedence_parser();
             //test_baisc_parser();
 
             //string line = "test#aaatest#";
@@ -92,6 +93,21 @@ namespace StoneComplier
                 // 测试语法树构造
                 Console.WriteLine("[parser output]");
                 ExprParser parser = new ExprParser(lexer);
+                ASTree ast = parser.Expression();
+                Console.WriteLine(ast.ToString());
+            }
+        }
+
+        public static void test_op_precedence_parser()
+        {
+            string code_file_path = "../../../stone_src/arithmetic.stone";
+            using (FileStream fsRead = new FileStream(code_file_path, FileMode.Open, FileAccess.Read))
+            {
+                Lexer lexer = new Lexer(fsRead);
+
+                // 测试语法树构造
+                Console.WriteLine("[parser output]");
+                OpPrecedenceParser parser = new OpPrecedenceParser(lexer);
                 ASTree ast = parser.Expression();
                 Console.WriteLine(ast.ToString());
             }

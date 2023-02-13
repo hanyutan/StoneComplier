@@ -6,14 +6,15 @@ using System.Threading.Tasks;
 
 namespace StoneComplier
 {
-/* 四则运算表达式的语法规则
- * factor:     NUMBER | "(" expression ")"
- * term:       factor { ( "*" | "/" ) factor}
- * expression: term   { ( "+" | "-" ) term  }
- */
-
     class ExprParser
     {
+        /* 四则运算表达式的语法规则
+         * factor:     NUMBER | "(" expression ")"
+         * term:       factor { ( "*" | "/" ) factor}
+         * expression: term   { ( "+" | "-" ) term  }
+         */
+
+        // LL(1) 预读一次，自顶向下语法分析
         private Lexer lexer;
 
         public ExprParser(Lexer p)
@@ -34,7 +35,7 @@ namespace StoneComplier
             return left;
         }
 
-        public ASTree Term()
+        ASTree Term()
         {
             // 代表term非终结符
             ASTree left = Factor();
@@ -47,7 +48,7 @@ namespace StoneComplier
             return left;
         }
 
-        public ASTree Factor()
+        ASTree Factor()
         {
             // 代表factor非终结符
             if(IsToken("("))
