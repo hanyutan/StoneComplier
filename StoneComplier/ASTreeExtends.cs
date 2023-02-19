@@ -12,7 +12,8 @@ namespace StoneComplier
         // 整型字面量
         public NumLiteral(Token t) : base(t)
         {
-
+            if (t.Type != TokenType.Number)
+                throw new StoneException("Token is not number");
         }
 
         public int Value
@@ -29,7 +30,8 @@ namespace StoneComplier
         // 整型字面量
         public StringLiteral(Token t) : base(t)
         {
-
+            if (t.Type != TokenType.String)
+                throw new StoneException("Token is not string");
         }
 
         public string Value
@@ -47,7 +49,8 @@ namespace StoneComplier
         // 变量名、类名、函数名
         public DefName(Token t) : base(t)
         {
-
+            if (t.Type != TokenType.Identifier)
+                throw new StoneException("Token is not identifier");
         }
 
         public string GetValue()
@@ -56,12 +59,13 @@ namespace StoneComplier
         }
     }
 
-    public class BinaryOp : ASTBranch
+    public class BinaryOp : ASTList
     {
         // 二元运算
         public BinaryOp(List<ASTree> list) : base(list)
         {
-
+            if(list.Count != 3)
+                throw new StoneException("BinaryOp need 3 elements");
         }
 
         public ASTree Left
@@ -90,7 +94,7 @@ namespace StoneComplier
         }
     }
 
-    public class PrimaryExpr : ASTBranch
+    public class PrimaryExpr : ASTList
     {
         // 语法模式 非终结符
         public PrimaryExpr(List<ASTree> list) : base(list)
@@ -107,7 +111,7 @@ namespace StoneComplier
         }
     }
 
-    public class NegativeExpr : ASTBranch
+    public class NegativeExpr : ASTList
     {
         public NegativeExpr(List<ASTree> list) : base(list)
         {
@@ -125,7 +129,7 @@ namespace StoneComplier
         }
     }
 
-    public class BlockStatement : ASTBranch
+    public class BlockStatement : ASTList
     {
         public BlockStatement(List<ASTree> list) : base(list)
         {
@@ -133,7 +137,7 @@ namespace StoneComplier
         }
     }
 
-    public class IfStatement : ASTBranch
+    public class IfStatement : ASTList
     {
         public IfStatement(List<ASTree> list) : base(list)
         {
@@ -153,7 +157,7 @@ namespace StoneComplier
         public ASTree ElseBlock()
         {
             if (Children.Count > 2)
-                return Children[1];
+                return Children[2];
             else
                 return null;
         }
@@ -165,7 +169,7 @@ namespace StoneComplier
     }
 
 
-    public class WhileStatement : ASTBranch
+    public class WhileStatement : ASTList
     {
         public WhileStatement(List<ASTree> list) : base(list)
         {
@@ -187,7 +191,7 @@ namespace StoneComplier
             return "(while" + Condition() + " do " + Body() + ")";
         }
     }
-    public class NullStatement : ASTBranch
+    public class NullStatement : ASTList
     {
         public NullStatement(List<ASTree> list) : base(list)
         {

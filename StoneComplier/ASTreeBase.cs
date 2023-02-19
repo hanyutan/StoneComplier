@@ -39,12 +39,12 @@ namespace StoneComplier
         }
     }
 
-    public class ASTBranch: ASTree
+    public class ASTList: ASTree
     {
         // 语法树的中间节点
         public List<ASTree> Children = new List<ASTree>();
 
-        public ASTBranch(List<ASTree> list)
+        public ASTList(List<ASTree> list)
         {
             type = ASTNodeType.Branch;
             Children = list;

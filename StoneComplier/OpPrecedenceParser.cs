@@ -15,32 +15,20 @@ namespace StoneComplier
          * 举例：Number "+" Number "*" Number
          * 需要知道中间那个Number究竟是+的右操作数，还是*的左操作数——由DoShift来判断
          */
-        public class Precedence
-        {
-            public int priority;   // 优先级，数值越大优先级越高，1 2 3 4
-            public bool left_asso; // 左结合or右结合
-
-            public Precedence(int i, bool b)
-            {
-                priority = i;
-                left_asso = b;
-            }
-        }
 
         private Lexer lexer;
-        protected Dictionary<string, Precedence> operators;
+        protected Operators operators;
      
         public OpPrecedenceParser(Lexer p)
         {
             lexer = p;
-            operators = new Dictionary<string, Precedence>();
-            operators.Add("<", new Precedence(1, true));
-            operators.Add(">", new Precedence(1, true));
-            operators.Add("+", new Precedence(2, true));
-            operators.Add("-", new Precedence(2, true));
-            operators.Add("*", new Precedence(3, true));
-            operators.Add("/", new Precedence(3, true));
-            operators.Add("^", new Precedence(4, false));
+            operators.Add("<", 1, Operators.LEFT);
+            operators.Add(">", 1, Operators.LEFT);
+            operators.Add("+", 2, Operators.LEFT);
+            operators.Add("-", 2, Operators.LEFT);
+            operators.Add("*", 3, Operators.LEFT);
+            operators.Add("/", 3, Operators.LEFT);
+            operators.Add("^", 4, Operators.RIGHT);
         }
 
         public ASTree Expression()
@@ -49,9 +37,8 @@ namespace StoneComplier
             ASTree right = Factor();
             Precedence next;
             while((next = NextOperator()) != null)
-            {
                 right = DoShift(right, next.priority);
-            }
+            
             return right;
         }
 
@@ -62,9 +49,8 @@ namespace StoneComplier
             ASTree right = Factor();
             Precedence next;
             while ((next = NextOperator()) != null && RightIsExpr(prior, next))
-            {
                 right = DoShift(right, next.priority);
-            }
+            
             return new BinaryOp(new List<ASTree> { left, op, right });
         }
 
@@ -72,8 +58,8 @@ namespace StoneComplier
         {
             Token token = lexer.Peek(0);
             string token_text = token.GetText();
-            if (token.Type == TokenType.Identifier && operators.ContainsKey(token_text))
-                return operators[token_text];
+            if (token.Type == TokenType.Identifier)
+                return operators.Get(token_text);
             else
                 return null;
         }

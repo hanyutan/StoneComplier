@@ -49,9 +49,9 @@ namespace StoneComplier
         public static void Main(string[] args)
         {
             //test_lexer();
-            test_expr_parser();
-            test_op_precedence_parser();
-            //test_baisc_parser();
+            //test_expr_parser();
+            //test_op_precedence_parser();
+            test_baisc_parser();
 
             //string line = "test#aaatest#";
             //string pattern = @"test#";
@@ -64,24 +64,36 @@ namespace StoneComplier
 
         public static void test_baisc_parser()
         {
-            //string code_file_path = "../../../stone_src/while_loop.stone";
-            //using (FileStream fsRead = new FileStream(code_file_path, FileMode.Open, FileAccess.Read))
-            //{
-            //    Lexer lexer = new Lexer(fsRead);
+            string code_file_path = "../../../stone_src/while_loop.stone";
+            using (FileStream fsRead = new FileStream(code_file_path, FileMode.Open, FileAccess.Read))
+            {
+                Lexer lexer = new Lexer(fsRead);
 
-            //    // 测试单词拆解
-            //    for (Token token; (token = lexer.Read()) != Token.EOF;)
-            //        Console.WriteLine(token.GetText());
-
-            //    // 测试语法树构造
-            //    BasicParser parser = new BasicParser();
-            //    while (lexer.Peek(0) != Token.EOF)
-            //    {
-            //        ASTree ast = parser.Parse(lexer);
-            //        Console.WriteLine(ast.ToString());
-            //    }
-            //}
+                // 测试语法树构造
+                Console.WriteLine("[parser output]");
+                BasicParser parser = new BasicParser();
+                while (lexer.Peek(0) != Token.EOF)
+                {
+                    ASTree ast = parser.Parse(lexer);
+                    Console.WriteLine(ast.ToString());
+                }
+            }
         }
+        public static void test_op_precedence_parser()
+        {
+            string code_file_path = "../../../stone_src/arithmetic.stone";
+            using (FileStream fsRead = new FileStream(code_file_path, FileMode.Open, FileAccess.Read))
+            {
+                Lexer lexer = new Lexer(fsRead);
+
+                // 测试语法树构造
+                Console.WriteLine("[parser output]");
+                OpPrecedenceParser parser = new OpPrecedenceParser(lexer);
+                ASTree ast = parser.Expression();
+                Console.WriteLine(ast.ToString());
+            }
+        }
+
 
         public static void test_expr_parser()
         {
@@ -93,21 +105,6 @@ namespace StoneComplier
                 // 测试语法树构造
                 Console.WriteLine("[parser output]");
                 ExprParser parser = new ExprParser(lexer);
-                ASTree ast = parser.Expression();
-                Console.WriteLine(ast.ToString());
-            }
-        }
-
-        public static void test_op_precedence_parser()
-        {
-            string code_file_path = "../../../stone_src/arithmetic.stone";
-            using (FileStream fsRead = new FileStream(code_file_path, FileMode.Open, FileAccess.Read))
-            {
-                Lexer lexer = new Lexer(fsRead);
-
-                // 测试语法树构造
-                Console.WriteLine("[parser output]");
-                OpPrecedenceParser parser = new OpPrecedenceParser(lexer);
                 ASTree ast = parser.Expression();
                 Console.WriteLine(ast.ToString());
             }
