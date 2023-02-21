@@ -6,196 +6,196 @@ using System.Threading.Tasks;
 
 namespace StoneComplier
 {
-
-    public class NumLiteral : ASTLeaf
+    // partial分部类，分开维护
+    public partial class ASTree
     {
-        // 整型字面量
-        public NumLiteral(Token t) : base(t)
+        public virtual object Eval(Env env)
         {
-            if (t.Type != TokenType.Number)
-                throw new StoneException("Token is not number");
-        }
-
-        public int Value
-        {
-            get
-            {
-                return token.GetNumber();
-            }
+            // 会递归调用子节点的eval方法
+            throw new StoneException($"Eval failed: {ToString()}");
         }
     }
 
-    public class StringLiteral : ASTLeaf
+    public partial class ASTList : ASTree
     {
-        // 整型字面量
-        public StringLiteral(Token t) : base(t)
+        public override object Eval(Env env)
         {
-            if (t.Type != TokenType.String)
-                throw new StoneException("Token is not string");
-        }
-
-        public string Value
-        {
-            get
-            {
-                return token.GetText();
-            }
+            throw new StoneException($"Eval failed: {ToString()}");
         }
     }
 
-
-    public class DefName : ASTLeaf
+    public partial class ASTLeaf : ASTree
     {
-        // 变量名、类名、函数名
-        public DefName(Token t) : base(t)
+        public override object Eval(Env env)
         {
-            if (t.Type != TokenType.Identifier)
-                throw new StoneException("Token is not identifier");
-        }
-
-        public string GetValue()
-        {
-            return token.GetText();
+            throw new StoneException($"Eval failed: {ToString()}");
         }
     }
 
-    public class BinaryOp : ASTList
+    public partial class NumLiteral : ASTLeaf
     {
-        // 二元运算
-        public BinaryOp(List<ASTree> list) : base(list)
+        public override object Eval(Env env)
         {
-            if(list.Count != 3)
-                throw new StoneException("BinaryOp need 3 elements");
-        }
-
-        public ASTree Left
-        {
-            get
-            {
-                return Children[0];
-            }
-        }
-
-        // 运算符也是一个leaf node，存在于token中
-        public string Operator
-        {
-            get
-            {
-                return ((ASTLeaf)Children[1]).ToString();
-            }
-        }
-
-        public ASTree Right
-        {
-            get
-            {
-                return Children[2];
-            }
+            return Value;
         }
     }
 
-    public class PrimaryExpr : ASTList
+    public partial class StringLiteral : ASTLeaf
     {
-        // 语法模式 非终结符
-        public PrimaryExpr(List<ASTree> list) : base(list)
+        public override object Eval(Env env)
         {
-
+            return Value;
         }
+    }
 
-        public static ASTree Create(List<ASTree> list)
+    public partial class DefName : ASTLeaf
+    {
+        public override object Eval(Env env)
         {
-            if (list.Count == 1)
-                return list[0];
+            return env.Get(Value);
+        }
+    }
+
+    public partial class BinaryOp : ASTList
+    {
+        public override object Eval(Env env)
+        {
+            if(Operator == "=")
+                return ComputeAssign(env);
             else
-                return new PrimaryExpr(list);
-        }
-    }
-
-    public class NegativeExpr : ASTList
-    {
-        public NegativeExpr(List<ASTree> list) : base(list)
-        {
-
+                return ComputeOp(env);
         }
 
-        public ASTree Operand()
+        object ComputeAssign(Env env)
         {
-            return Children[0];
-        }
-
-        public override string ToString()
-        {
-            return "-" + Operand().ToString();
-        }
-    }
-
-    public class BlockStatement : ASTList
-    {
-        public BlockStatement(List<ASTree> list) : base(list)
-        {
-
-        }
-    }
-
-    public class IfStatement : ASTList
-    {
-        public IfStatement(List<ASTree> list) : base(list)
-        {
-
-        }
-
-        public ASTree Condition()
-        {
-            return Children[0];
-        }
-
-        public ASTree ThenBlock()
-        {
-            return Children[1];
-        }
-
-        public ASTree ElseBlock()
-        {
-            if (Children.Count > 2)
-                return Children[2];
+            object rvalue = Right.Eval(env);
+            if (Left is DefName)
+            {
+                string name = ((DefName)Left).Value;
+                env.Put(name, rvalue);
+                return rvalue;   // 赋值表达式的返回值
+            }
             else
-                return null;
+                throw new StoneException("BinaryOp: ComputeAssign failed");
         }
 
-        public override string ToString()
+        object ComputeOp(Env env)
         {
-            return "(if" + Condition().ToString() + " then " + ThenBlock().ToString() + "else" + ElseBlock().ToString() + ")";
+            object left = Left.Eval(env);
+            object right = Right.Eval(env);
+            string op = Operator;
+
+            if (left is int && right is int)
+            {
+                return ComputeNumber((int)left, op, (int)right);
+            }
+            else if (op == "+")
+            {
+                return left.ToString() + right.ToString();
+            }
+            else if (op == "==")
+            {
+                if (left == null)
+                    return right == null ? 1 : 0;
+                else
+                    return left == right ? 1 : 0;
+            }
+            else
+                throw new StoneException("BinaryOp: ComputeOp failed");
+        }
+
+        object ComputeNumber(int left, string op, int right)
+        {
+            switch(op)
+            {
+                case "+": return left + right;
+                case "-": return left - right;
+                case "*": return left * right;
+                case "/": return left / right;
+                case "%": return left % right;
+                case "==": return left == right ? 1 : 0;
+                case ">": return left > right ? 1 : 0;
+                case "<": return left < right ? 1 : 0;
+                default:
+                    throw new StoneException($"BinaryOp: ComputeNumber failed, operator = {op}");
+            }
         }
     }
 
-
-    public class WhileStatement : ASTList
+    public partial class PrimaryExpr : ASTList
     {
-        public WhileStatement(List<ASTree> list) : base(list)
+        public override object Eval(Env env)
         {
-
-        }
-
-        public ASTree Condition()
-        {
-            return Children[0];
-        }
-
-        public ASTree Body()
-        {
-            return Children[1];
-        }
-
-        public override string ToString()
-        {
-            return "(while" + Condition() + " do " + Body() + ")";
+            return null;
         }
     }
-    public class NullStatement : ASTList
-    {
-        public NullStatement(List<ASTree> list) : base(list)
-        {
 
+    public partial class NegativeExpr : ASTList
+    {
+        public override object Eval(Env env)
+        {
+            ASTree operand = Operand();
+            object result = operand.Eval(env);
+            if (result is int)
+                return -(int)result;
+            else
+                throw new StoneException("NegativeExpr: not int");
+        }
+    }
+
+    public partial class BlockStatement : ASTList
+    {
+        public override object Eval(Env env)
+        {
+            object result = 0;
+            // 返回最后一个语句的值
+            foreach(ASTree child in Children)
+            {
+                if(child is not NullStatement)
+                    result = child.Eval(env);
+            }
+            return result;
+        }
+    }
+
+    public partial class IfStatement : ASTList
+    {
+        public override object Eval(Env env)
+        {
+            object cond = Condition.Eval(env);
+            if (cond is int && (int)cond != 0)
+                return ThenBlock.Eval(env);
+            else
+            {
+                if (ElseBlock == null)
+                    return 0;
+                else
+                    return ElseBlock.Eval(env);
+            }
+        }
+    }
+
+    public partial class WhileStatement : ASTList
+    {
+        public override object Eval(Env env)
+        {
+            object result = 0;
+            for(; ; )
+            {
+                object cond = Condition.Eval(env);
+                if (cond is int && (int)cond != 0)
+                    result = Body.Eval(env);    // 条件满足就继续算
+                else
+                    return result;   // 条件不满足就返回最后一个值
+            }
+        }
+    }
+
+    public partial class NullStatement : ASTList
+    {
+        public override object Eval(Env env)
+        {
+            return null;
         }
     }
 }

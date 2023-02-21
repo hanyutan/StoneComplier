@@ -1,6 +1,8 @@
 ﻿/* stone:
- * 流程：词法分析（正则匹配拆分）、语法分析（使用BNF来表示语法，查找模式匹配，一边获取单词一边构造抽象语法树，根据语法规则将stone语言改写为C#代码）
- * 
+ * 流程：
+ * 1.词法分析（正则匹配拆分）
+ * 2.语法分析（使用BNF来表示语法，查找模式匹配，一边获取单词一边构造抽象语法树，根据语法规则将stone语言改写为C#代码）
+ * 3.解释器（从抽象语法树的根节点遍历到叶节点，计算各个节点的内容）
  * 
  * 词法分析器 lexical analyzer / lexer / scanner
  * 语法分析器 parser
@@ -51,7 +53,8 @@ namespace StoneComplier
             //test_lexer();
             //test_expr_parser();
             //test_op_precedence_parser();
-            test_baisc_parser();
+            //test_basic_parser();
+            test_basic_interpreter();
 
             //string line = "test#aaatest#";
             //string pattern = @"test#";
@@ -62,7 +65,29 @@ namespace StoneComplier
 
         }
 
-        public static void test_baisc_parser()
+        public static void test_basic_interpreter()
+        {
+            string code_file_path = "../../../stone_src/while_loop.stone";
+            using (FileStream fsRead = new FileStream(code_file_path, FileMode.Open, FileAccess.Read))
+            {
+                Lexer lexer = new Lexer(fsRead);
+                BasicParser parser = new BasicParser();
+                BasicEnv env = new BasicEnv();
+
+                Console.WriteLine("[eval output]");
+                while (lexer.Peek(0) != Token.EOF)
+                {
+                    ASTree ast = parser.Parse(lexer);
+                    if(ast is not NullStatement)
+                    {
+                        object result = ast.Eval(env);
+                        Console.WriteLine(result.ToString());
+                    }
+                }
+            }
+        }
+
+        public static void test_basic_parser()
         {
             string code_file_path = "../../../stone_src/while_loop.stone";
             using (FileStream fsRead = new FileStream(code_file_path, FileMode.Open, FileAccess.Read))
@@ -79,6 +104,7 @@ namespace StoneComplier
                 }
             }
         }
+
         public static void test_op_precedence_parser()
         {
             string code_file_path = "../../../stone_src/arithmetic.stone";

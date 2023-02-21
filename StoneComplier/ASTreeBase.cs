@@ -10,10 +10,9 @@ namespace StoneComplier
         Root,
         Branch,
         Leaf,
-
     }
 
-    public class ASTree
+    public partial class ASTree
     {
         // 抽象语法树，用于表示程序结构的树形结构
         // 这个类其实代表节点node，最终一棵树记录的就是一个根节点
@@ -39,7 +38,7 @@ namespace StoneComplier
         }
     }
 
-    public class ASTList: ASTree
+    public partial class ASTList: ASTree
     {
         // 语法树的中间节点
         public List<ASTree> Children = new List<ASTree>();
@@ -77,7 +76,7 @@ namespace StoneComplier
         }
     }
 
-    public class ASTLeaf: ASTree
+    public partial class ASTLeaf: ASTree
     {
         // 语法树的叶子节点
         protected Token token;   // 这里规定叶子节点必须与对应的token相关联
