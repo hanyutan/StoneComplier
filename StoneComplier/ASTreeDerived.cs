@@ -146,4 +146,48 @@ namespace StoneComplier
 
         }
     }
+
+    public partial class DefStatement : ASTList
+    {
+        public DefStatement(List<ASTree> list) : base(list)
+        {
+
+        }
+
+        public string FuncName => ((ASTLeaf)Children[0]).ToString();
+
+        public ParameterList ParameterList => (ParameterList)Children[1];
+
+        public BlockStatement Body => (BlockStatement)Children[2];
+
+        public override string ToString()
+        {
+            return "(def" + FuncName + " " + ParameterList.ToString() + " " + Body.ToString() + ")";
+        }
+    }
+
+    public partial class ParameterList : ASTList
+    {
+        public ParameterList(List<ASTree> list) : base(list)
+        {
+
+        }
+
+        public string GetParamName(int i)
+        {
+            return ((ASTLeaf)Children[i]).ToString();
+        }
+
+        public int Size => Children.Count;
+    }
+
+    public partial class Arguments : ASTList
+    {
+        public Arguments(List<ASTree> list) : base(list)
+        {
+
+        }
+
+        public int Size => Children.Count;
+    }
 }

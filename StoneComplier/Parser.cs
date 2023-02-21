@@ -77,11 +77,6 @@ namespace StoneComplier
                 }
                 return null;
             }
-
-            //public void Insert(Parser p)
-            //{
-            //    parsers.Insert(0, p);
-            //}
         }
 
         protected class Repeator : Element
@@ -444,12 +439,13 @@ namespace StoneComplier
             return this;
         }
 
-        //public Parser Token(params string[] pat)
-        //{
-        //    // Token: 向规则中添加终结符（与pat匹配的标识符）
-        //    elements.Add(new Leaf(pat));
-        //    return this;
-        //}
+        public Parser Token(params string[] pat)
+        {
+            // Token: 向规则中添加终结符（与pat匹配的标识符）
+            // 比如在已经定义的二元运算符以外，又不可以省略的符号
+            elements.Add(new Leaf(pat));
+            return this;
+        }
 
         public Parser Sep(params string[] pat)
         {
@@ -472,14 +468,16 @@ namespace StoneComplier
             return this;
         }
 
-        //public Parser Maybe(Parser parser)
-        //{
-        //    // Maybe: 向规则中添加可省略的非终结符，如果省略则作为一颗仅有根节点的抽象语法树处理
-        //    Parser p2 = new Parser(parser);
-        //    p2.Reset();
-        //    elements.Add(new OrTree( parser, p2 ));
-        //    return this;
-        //}
+        public Parser Maybe(Parser parser)
+        {
+            // Maybe: 向规则中添加可省略的非终结符
+            // 即使省略，也会作为一颗仅有根节点的抽象语法树处理
+            // question 没太懂？？？
+            Parser p2 = new Parser(parser);
+            p2.Reset();
+            elements.Add(new OrTree(parser, p2));
+            return this;
+        }
 
         public Parser Option(Parser parser)
         {
@@ -501,21 +499,6 @@ namespace StoneComplier
             elements.Add(new Expr(type, parser, ops));
             return this;
         }
-
-        //public Parser InsertChoice(Parser parser)
-        //{
-        //    // 为语法规则起始处的or添加新的分支选项
-        //    Element element = elements[0];
-        //    if (element is OrTree)
-        //        ((OrTree)element).Insert(parser);
-        //    else
-        //    {
-        //        Parser otherwise = new Parser(this);
-        //        Reset(null);
-        //        Or(parser, otherwise);
-        //    }
-        //    return this;
-        //}
 
         public static void CheckSubclassType(Type type, Type base_type)
         {
