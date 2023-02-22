@@ -6,7 +6,9 @@ using System.Threading.Tasks;
 
 namespace StoneComplier
 {
-    public partial class NumLiteral : ASTLeaf
+    // 每个类都代表了一种语法树节点
+
+    public class NumLiteral : ASTLeaf
     {
         // 整型字面量
         public NumLiteral(Token t) : base(t)
@@ -16,9 +18,14 @@ namespace StoneComplier
         }
 
         public int Value => token.GetNumber();
+
+        public override object Eval(Env env)
+        {
+            return Value;
+        }
     }
 
-    public partial class StringLiteral : ASTLeaf
+    public class StringLiteral : ASTLeaf
     {
         // 整型字面量
         public StringLiteral(Token t) : base(t)
@@ -28,10 +35,15 @@ namespace StoneComplier
         }
 
         public string Value => token.GetText();
+
+        public override object Eval(Env env)
+        {
+            return Value;
+        }
     }
 
 
-    public partial class DefName : ASTLeaf
+    public class DefName : ASTLeaf
     {
         // 变量名、类名、函数名
         public DefName(Token t) : base(t)
@@ -41,9 +53,14 @@ namespace StoneComplier
         }
 
         public string Value => token.GetText();
+
+        public override object Eval(Env env)
+        {
+            return env.Get(Value);
+        }
     }
 
-    public partial class BinaryOp : ASTList
+    public class BinaryOp : ASTList
     {
         // 二元运算
         public BinaryOp(List<ASTree> list) : base(list)
@@ -58,15 +75,80 @@ namespace StoneComplier
         public string Operator => Children[1].ToString();
 
         public ASTree Right => Children[2];
+
+        public override object Eval(Env env)
+        {
+            if (Operator == "=")
+                return ComputeAssign(env);
+            else
+                return ComputeOp(env);
+        }
+
+        object ComputeAssign(Env env)
+        {
+            object rvalue = Right.Eval(env);
+            if (Left is DefName)
+            {
+                string name = ((DefName)Left).Value;
+                env.Put(name, rvalue);
+                return rvalue;   // 赋值表达式的返回值
+            }
+            else
+                throw new StoneException("BinaryOp: ComputeAssign failed");
+        }
+
+        object ComputeOp(Env env)
+        {
+            object left = Left.Eval(env);
+            object right = Right.Eval(env);
+            string op = Operator;
+
+            if (left is int && right is int)
+            {
+                return ComputeNumber((int)left, op, (int)right);
+            }
+            else if (op == "+")
+            {
+                return left.ToString() + right.ToString();
+            }
+            else if (op == "==")
+            {
+                if (left == null)
+                    return right == null ? 1 : 0;
+                else
+                    return left == right ? 1 : 0;
+            }
+            else
+                throw new StoneException("BinaryOp: ComputeOp failed");
+        }
+
+        object ComputeNumber(int left, string op, int right)
+        {
+            switch (op)
+            {
+                case "+": return left + right;
+                case "-": return left - right;
+                case "*": return left * right;
+                case "/": return left / right;
+                case "%": return left % right;
+                case "==": return left == right ? 1 : 0;
+                case ">": return left > right ? 1 : 0;
+                case "<": return left < right ? 1 : 0;
+                default:
+                    throw new StoneException($"BinaryOp: ComputeNumber failed, operator = {op}");
+            }
+        }
     }
 
-    public partial class PrimaryExpr : ASTList
+    public class PrimaryExpr : ASTList
     {
         // 语法模式 非终结符
         public PrimaryExpr(List<ASTree> list) : base(list)
         {
 
         }
+
+        public ASTree Operand => Children[0];
 
         public static ASTree Create(List<ASTree> list)
         {
@@ -75,35 +157,90 @@ namespace StoneComplier
             else
                 return new PrimaryExpr(list);
         }
+
+        public override object Eval(Env env)
+        {
+            return EvalNestArgs(env, 0);
+        }
+
+        object EvalNestArgs(Env env, int nest)
+        {
+            // 函数调用阶段，
+
+            /* 如果是num/id/string，list.Count = 1, 就形成不了PrimaryExpr这个子节点
+             * 所以但凡走到这个函数了，都是函数调用
+             * 支持类似f(9)(3)形式，计算嵌套的每组函数实参args调用结果
+             */
+            if (HasPosfix(nest))
+            {
+                object target = EvalNestArgs(env, nest + 1);
+                return GetPosfix(nest).Eval(env, target);   // 拿到Function，交给Arguments计算
+            }
+            else
+            {
+                // Operand是函数名，Eval返回环境中查找到的Function函数对象
+                return Operand.Eval(env);
+            }
+        }
+
+        public Postfix GetPosfix(int nest)
+        {
+            // 嵌套参数调用，从右向左，先把右侧的参数压栈存起来，最先处理的是左侧第一个调用
+            return (Postfix)Children[Children.Count - 1 - nest];
+        }
+
+        public bool HasPosfix(int nest)
+        {
+            // 参数倒序，从右向左？？
+            return Children.Count - 1 - nest > 0;
+        }
     }
 
-    public partial class NegativeExpr : ASTList
+    public class NegativeExpr : ASTList
     {
         public NegativeExpr(List<ASTree> list) : base(list)
         {
 
         }
 
-        public ASTree Operand()
-        {
-            return Children[0];
-        }
+        public ASTree Operand => Children[0];
 
         public override string ToString()
         {
-            return "-" + Operand().ToString();
+            return "-" + Operand.ToString();
+        }
+
+        public override object Eval(Env env)
+        {
+            object result = Operand.Eval(env);
+            if (result is int)
+                return -(int)result;
+            else
+                throw new StoneException("NegativeExpr: not int");
         }
     }
 
-    public partial class BlockStatement : ASTList
+    public class BlockStatement : ASTList
     {
         public BlockStatement(List<ASTree> list) : base(list)
         {
 
         }
+
+        public override object Eval(Env env)
+        {
+            object result = 0;
+            // 返回最后一个语句的值
+            foreach (ASTree child in Children)
+            {
+                if (child is not NullStatement)
+                    result = child.Eval(env);
+            }
+            return result;
+        }
     }
 
-    public partial class IfStatement : ASTList
+    public class IfStatement : ASTList
     {
         public IfStatement(List<ASTree> list) : base(list)
         {
@@ -118,12 +255,26 @@ namespace StoneComplier
 
         public override string ToString()
         {
-            return "(if" + Condition.ToString() + " then " + ThenBlock.ToString() + "else" + ElseBlock.ToString() + ")";
+            return "(if " + Condition.ToString() + " then " + ThenBlock.ToString() + " else " + ElseBlock.ToString() + ")";
+        }
+
+        public override object Eval(Env env)
+        {
+            object cond = Condition.Eval(env);
+            if (cond is int && (int)cond != 0)
+                return ThenBlock.Eval(env);
+            else
+            {
+                if (ElseBlock == null)
+                    return 0;
+                else
+                    return ElseBlock.Eval(env);
+            }
         }
     }
 
 
-    public partial class WhileStatement : ASTList
+    public class WhileStatement : ASTList
     {
         public WhileStatement(List<ASTree> list) : base(list)
         {
@@ -138,16 +289,34 @@ namespace StoneComplier
         {
             return "(while" + Condition.ToString() + " do " + Body.ToString() + ")";
         }
+
+        public override object Eval(Env env)
+        {
+            object result = 0;
+            for (; ; )
+            {
+                object cond = Condition.Eval(env);
+                if (cond is int && (int)cond != 0)
+                    result = Body.Eval(env);    // 条件满足就继续算
+                else
+                    return result;   // 条件不满足就返回最后一个值
+            }
+        }
     }
-    public partial class NullStatement : ASTList
+    public class NullStatement : ASTList
     {
         public NullStatement(List<ASTree> list) : base(list)
         {
 
         }
+
+        public override object Eval(Env env)
+        {
+            return null;
+        }
     }
 
-    public partial class DefStatement : ASTList
+    public class DefStatement : ASTList
     {
         public DefStatement(List<ASTree> list) : base(list)
         {
@@ -156,32 +325,56 @@ namespace StoneComplier
 
         public string FuncName => ((ASTLeaf)Children[0]).ToString();
 
-        public ParameterList ParameterList => (ParameterList)Children[1];
+        public ParameterList ParamList => (ParameterList)Children[1];
 
         public BlockStatement Body => (BlockStatement)Children[2];
 
         public override string ToString()
         {
-            return "(def" + FuncName + " " + ParameterList.ToString() + " " + Body.ToString() + ")";
+            return "(def " + FuncName + " " + ParamList.ToString() + " " + Body.ToString() + ")";
+        }
+
+        public override object Eval(Env env)
+        {
+            // 函数定义阶段，创建函数对象，并添加到全局环境
+            env.Put(FuncName, new Function(FuncName, ParamList, Body, env));
+            return FuncName;
         }
     }
 
-    public partial class ParameterList : ASTList
+    public class ParameterList : ASTList
     {
         public ParameterList(List<ASTree> list) : base(list)
         {
 
         }
 
-        public string GetParamName(int i)
-        {
-            return ((ASTLeaf)Children[i]).ToString();
-        }
-
         public int Size => Children.Count;
+
+        public void Eval(Env env, int index, object value)
+        {
+            // 寻找第几个形参名，将实参值添加进局部环境
+            string param_name = ((ASTLeaf)Children[index]).ToString();
+            ((NestedEnv)env).AddNew(param_name, value);   // 参数一定是最开始没有，直接加进去
+        }
     }
 
-    public partial class Arguments : ASTList
+    public class Postfix : ASTList
+    {
+        public Postfix(List<ASTree> list) : base(list)
+        {
+
+        }
+        public virtual object Eval(Env env, object value)
+        {
+            return null;
+        }
+        // 搞了一个抽象定义，作为各种参数形式的未来扩展吧？
+        // 子类Arguments表示实参序列
+        // 以后可以搞个子类ArrayRef用于支持数组
+    }
+
+    public class Arguments : Postfix
     {
         public Arguments(List<ASTree> list) : base(list)
         {
@@ -189,5 +382,37 @@ namespace StoneComplier
         }
 
         public int Size => Children.Count;
+
+        public override object Eval(Env caller_env, object value)
+        {
+            // value是从环境中拿到的Function对象 
+            // caller_env是调用函数时所处的环境，目前暂时就是全局环境
+            // 然后利用caller_env、实参列表children、函数对象value，来计算函数调用结果
+            if (value is not Function)
+                throw new StoneException("Wrong function");
+
+            Function func = (Function)value;
+
+            // 形参，检查数量应与实参一致
+            ParameterList param_list = func.Parameters;
+            if (Size != param_list.Size)
+                throw new StoneException("Function arguments number not equal to definition");
+
+            Env nest_env = func.MakeEnv();    // 静态作用域：nest_env.outer是def函数时所处的环境，目前暂时就是全局环境
+            ((NestedEnv)nest_env).SetOuter(caller_env);   // 动态作用域
+
+            // 实参，挨个计算并以形参名添加进局部环境
+            for (int i = 0; i < Size; ++i)
+            {
+                // 实参值要在全局环境中计算
+                object arg_value = Children[i].Eval(caller_env);
+                // i 指代第几个参数，找到形参名加入到局部环境
+                param_list.Eval(nest_env, i, arg_value);
+
+            }
+
+            // 最后在局部环境中计算函数体
+            return func.Body.Eval(nest_env);
+        }
     }
 }

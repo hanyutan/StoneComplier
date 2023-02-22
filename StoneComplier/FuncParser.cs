@@ -16,25 +16,18 @@ namespace StoneComplier
         // 使用Maybe而不是Option，保证有一颗子树（仅有根节点，子节点数量为0，正好表示没有参数）
         protected static Parser def = RT(typeof(DefStatement)).Sep("def").Identifier(reserved).Ast(param_list).Ast(block);
         protected static Parser args = RT(typeof(Arguments)).Ast(expr0).Repeat(R.Sep(",").Ast(expr0));
-        protected static Parser postfix = R.Sep("(").Maybe(args).Sep(")");
+        protected static Parser arg_list = R.Sep("(").Maybe(args).Sep(")");
 
         //原有非终结符的修改由构造函数来完成
         public FuncParser(): base()
         {
             reserved.Add(")");   // 避免右括号成为标识符
 
-            // 或者直接 primary.Repeat(postfix);
-            primary = RT(typeof(PrimaryExpr))
-            .Or(R.Sep("(").Ast(expr0).Sep(")"),
-                R.Number(typeof(NumLiteral)),
-                R.Identifier(reserved, typeof(DefName)),
-                R.String(typeof(StringLiteral)))
-            .Repeat(postfix);
-
-            // 或者直接 simple.Option(args);
-            simple = RT(typeof(PrimaryExpr)).Ast(expr0).Option(args);
-
-            program = R.Or(def, statement0, RT(typeof(NullStatement))).Sep(";", Token.EOL);
+            // 对已有规则的修改
+            // 注意必须在原有基础上添加，不能重新赋值，不然之前引用到它们的地方得不到更新
+            primary.Repeat(arg_list);
+            simple.Option(args);
+            program.InsertChoice(def);
         }
     }
 }

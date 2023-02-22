@@ -58,15 +58,26 @@ namespace StoneComplier
                 primary);
         protected static Parser expr = expr0.Expression(factor, operators, typeof(BinaryOp));
         protected static Parser block = RT(typeof(BlockStatement))
-            .Sep("{").Option(statement0)
+            .Sep("{")
+            .Option(statement0)
             .Repeat(R.Sep(";", Token.EOL).Option(statement0))
             .Sep("}");
         protected static Parser simple = RT(typeof(PrimaryExpr)).Ast(expr0);
-        protected static Parser statement = statement0.Or(
-            RT(typeof(IfStatement)).Sep("if").Ast(expr).Ast(block).Option(R.Sep("else").Ast(block)),
-            RT(typeof(WhileStatement)).Sep("while").Ast(expr0).Ast(block),
-            simple);
-        protected static Parser program = R.Or(statement0, RT(typeof(NullStatement))).Sep(";", Token.EOL);
+        protected static Parser statement = statement0
+            .Or(RT(typeof(IfStatement))
+                    .Sep("if")
+                    .Ast(expr)
+                    .Ast(block)
+                    .Option(R.Sep("else").Ast(block)),
+                RT(typeof(WhileStatement))
+                    .Sep("while")
+                    .Ast(expr0)
+                    .Ast(block),
+                simple);
+        protected static Parser program = R
+            .Or(statement0, 
+                RT(typeof(NullStatement)))
+            .Sep(";", Token.EOL);
 
         public BasicParser()
         {

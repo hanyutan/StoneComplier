@@ -12,7 +12,7 @@ namespace StoneComplier
         Leaf,
     }
 
-    public partial class ASTree
+    public class ASTree
     {
         // 抽象语法树，用于表示程序结构的树形结构
         // 这个类其实代表节点node，最终一棵树记录的就是一个根节点
@@ -36,9 +36,15 @@ namespace StoneComplier
         {
             return "";
         }
+
+        public virtual object Eval(Env env)
+        {
+            // 会递归调用子节点的eval方法
+            throw new StoneException($"Eval failed: {ToString()}");
+        }
     }
 
-    public partial class ASTList: ASTree
+    public class ASTList: ASTree
     {
         // 语法树的中间节点
         public List<ASTree> Children = new List<ASTree>();
@@ -74,9 +80,14 @@ namespace StoneComplier
             result += ")";
             return result;
         }
+
+        public override object Eval(Env env)
+        {
+            throw new StoneException($"Eval failed: {ToString()}");
+        }
     }
 
-    public partial class ASTLeaf: ASTree
+    public class ASTLeaf: ASTree
     {
         // 语法树的叶子节点
         protected Token token;   // 这里规定叶子节点必须与对应的token相关联
@@ -101,6 +112,11 @@ namespace StoneComplier
         public TokenType GetTokenType()
         {
             return token.Type;
+        }
+
+        public override object Eval(Env env)
+        {
+            throw new StoneException($"Eval failed: {ToString()}");
         }
     }
 

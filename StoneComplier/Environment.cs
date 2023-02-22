@@ -12,6 +12,7 @@ namespace StoneComplier
         // 环境对象指一种用于记录变量名称和值的对应关系的数据结构
         public void Put(string name, object value);
         public object Get(string name);
+        public bool IsContain(string name);
     }
 
     public class BasicEnv: Env
@@ -24,13 +25,90 @@ namespace StoneComplier
             else
                 maps.Add(name, value);
         }
+
         public object Get(string name)
         {
             if(maps.ContainsKey(name))
             {
                 return maps[name];
             }
-            throw new StoneException($"Environment maps not contains {name}");
+            throw new StoneException($"Environment not contains {name}");
+        }
+
+        public bool IsContain(string name)
+        {
+            if (maps.ContainsKey(name))
+                return true;
+            else
+                return false;
+        }
+    }
+
+    /* 变量的作用域通常由嵌套结构实现，需要为每一种作用域准备一个单独的环境，并根据需要来嵌套环境
+     * 查找变量时，程序首先查找与最内层作用域对应的环境，如果没找到再向外逐层查找
+     * stone语言中目前不支持在函数内嵌套定义函数，也不考虑{}代码块的独立作用域，因此其始终只有2个作用域：全局、局部
+     * 
+     * 变量的生存周期可以通过环境对象的创建及清除时机来控制
+     */
+
+    public class NestedEnv : Env
+    {
+        Dictionary<string, object> maps = new Dictionary<string, object>();
+        Env outer = null;     // 因为由内到外查找，所以不是外部引用内部环境
+
+        public NestedEnv(Env env = null)
+        {
+            SetOuter(env);
+        }
+
+        public void SetOuter(Env env = null)
+        {
+            outer = env;
+        }
+
+        public void AddNew(string name, object value)
+        {
+            maps.Add(name, value);
+        }
+
+        public void Put(string name, object value)
+        {
+            bool inner_contain = maps.ContainsKey(name);
+            bool outer_contain = outer != null && outer.IsContain(name);
+            if(inner_contain)
+                maps[name] = value;   // 内部作用域有，更新内部值
+            else
+            {
+                if (outer_contain)
+                    outer.Put(name, value);   // 外部作用域有，更新外部值
+                else
+                    maps.Add(name, value);    // 内部外部作用域都没有，新增内部值
+            }
+        }
+
+        public object Get(string name)
+        {
+            if (maps.ContainsKey(name))
+                return maps[name];      // 查找局部作用域
+            else if(outer != null)
+                return outer.Get(name); // 查找全局作用域
+
+            throw new StoneException($"Environment not contains {name}");
+        }
+
+        public bool IsContain(string name)
+        {
+            if (maps.ContainsKey(name))
+            {
+                return true;
+            }
+            else
+            {
+                if (outer == null)
+                    return false;
+                else
+                    return outer.IsContain(name);
+            }
         }
     }
 }

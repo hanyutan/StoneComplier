@@ -77,6 +77,11 @@ namespace StoneComplier
                 }
                 return null;
             }
+
+            public void Insert(Parser p)
+            {
+                parsers.Insert(0, p);
+            }
         }
 
         protected class Repeator : Element
@@ -95,7 +100,7 @@ namespace StoneComplier
                 while(parser.Match(lexer))
                 {
                     ASTree t = parser.Parse(lexer);
-                    if (t is ASTList && ((ASTList)t).Children.Count > 0)  // 还可能解析出来空行，那就不用add
+                    if (t is not ASTList || ((ASTList)t).Children.Count > 0)  // Leaf和有child的List，add进语法树；还可能解析出来空行，那就不用add
                         ast.Add(t);
                     if (only_once)
                         break;
@@ -113,9 +118,8 @@ namespace StoneComplier
             Factory factory;   // 用于创建抽象语法树最终的叶子节点
             public AToken(Type type)
             {
+                if (type == null) type = typeof(ASTLeaf);
                 CheckSubclassType(type, typeof(ASTLeaf));
-                if (type == null)
-                    throw new StoneException("Parser.AToken: parse failed, type is null");
                 factory = Factory.Get(type, typeof(Token));
             }
 
@@ -500,11 +504,27 @@ namespace StoneComplier
             return this;
         }
 
+        public Parser InsertChoice(Parser parser)
+        {
+            // 为语法规则起始处的or添加新的分支选项
+            // 其实就是为了更新规则临时做的弥补
+            Element element = elements[0];
+            if (element is OrTree)
+                ((OrTree)element).Insert(parser);
+            else
+            {
+                Parser otherwise = new Parser(this);
+                Reset(null);
+                Or(parser, otherwise);
+            }
+            return this;
+        }
+
         public static void CheckSubclassType(Type type, Type base_type)
         {
             if (type != null && base_type != null)
             {
-                if (!type.IsSubclassOf(base_type))
+                if (type != base_type && !type.IsSubclassOf(base_type))
                     throw new StoneException($"Type {type.Name} is not subclass of {base_type.Name}");
             }
         }
