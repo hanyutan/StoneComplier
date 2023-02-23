@@ -3,7 +3,10 @@
  * 1.词法分析（正则匹配拆分）
  * 2.语法分析（使用BNF来表示语法，查找模式匹配，一边获取单词一边构造抽象语法树，根据语法规则将stone语言改写为C#代码）
  * 3.解释器（从抽象语法树的根节点遍历到叶节点，计算各个节点的内容）
- * 4.添加函数（扩充BNF语法规则，明确变量的时间范围——生存周期，和空间范围——作用域）
+ * 4.添加函数
+ *   - 扩充BNF语法规则
+ *   - 明确变量的时间范围——生存周期，和空间范围——作用域
+ *   - 闭包是一种特殊的匿名函数，可以实现把函数赋值给变量，或者作为参数传递给其他函数
  * 
  * 词法分析器 lexical analyzer / lexer / scanner
  * 语法分析器 parser
@@ -56,7 +59,9 @@ namespace StoneComplier
             //test_op_precedence_parser();    // 符号优先法，语法分析
             //test_basic_parser();            // 语法分析
             //test_basic_interpreter();       // 解释器计算
-            test_def_function();             // 函数定义与调用
+            //test_def_function();            // 函数定义与调用
+            //test_nest_function();           // 函数嵌套，动静态作用域演示
+            test_closure();                 // 测试闭包
 
             //string line = "test#aaatest#";
             //string pattern = @"test#";
@@ -67,42 +72,38 @@ namespace StoneComplier
 
         }
 
+        public static void test_closure()
+        {
+            run("closure", new ClosureParser(), new NestedEnv());
+        }
+
+        public static void test_nest_function()
+        {
+            run("nest_function", new FuncParser(), new NestedEnv());
+        }
+
         public static void test_def_function()
         {
-            string code_file_path = "../../../stone_src/nest_function.stone";
+            run("def_function", new FuncParser(), new NestedEnv());
+        }
+
+        public static void test_basic_interpreter()
+        {
+            run("while_loop", new BasicParser(), new BasicEnv());
+        }
+
+        public static void run(string code_file_name, BasicParser parser, Env env)
+        {
+            string code_file_path = $"../../../stone_src/{code_file_name}.stone";
             using (FileStream fsRead = new FileStream(code_file_path, FileMode.Open, FileAccess.Read))
             {
                 Lexer lexer = new Lexer(fsRead);
-                FuncParser parser = new FuncParser();  // BasicParser -> FuncParser
-                NestedEnv env = new NestedEnv();       // BasicEnv -> NestedEnv
 
                 Console.WriteLine("[eval output]");
                 while (lexer.Peek(0) != Token.EOF)
                 {
                     ASTree ast = parser.Parse(lexer);
                     if (ast is not NullStatement)
-                    {
-                        object result = ast.Eval(env);
-                        Console.WriteLine(result.ToString());
-                    }
-                }
-            }
-        }
-
-        public static void test_basic_interpreter()
-        {
-            string code_file_path = "../../../stone_src/while_loop.stone";
-            using (FileStream fsRead = new FileStream(code_file_path, FileMode.Open, FileAccess.Read))
-            {
-                Lexer lexer = new Lexer(fsRead);
-                BasicParser parser = new BasicParser();
-                BasicEnv env = new BasicEnv();
-
-                Console.WriteLine("[eval output]");
-                while (lexer.Peek(0) != Token.EOF)
-                {
-                    ASTree ast = parser.Parse(lexer);
-                    if(ast is not NullStatement)
                     {
                         object result = ast.Eval(env);
                         Console.WriteLine(result.ToString());

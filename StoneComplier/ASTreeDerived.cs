@@ -43,10 +43,10 @@ namespace StoneComplier
     }
 
 
-    public class DefName : ASTLeaf
+    public class IdName : ASTLeaf
     {
         // 变量名、类名、函数名
-        public DefName(Token t) : base(t)
+        public IdName(Token t) : base(t)
         {
             if (t.Type != TokenType.Identifier)
                 throw new StoneException("Token is not identifier");
@@ -87,9 +87,9 @@ namespace StoneComplier
         object ComputeAssign(Env env)
         {
             object rvalue = Right.Eval(env);
-            if (Left is DefName)
+            if (Left is IdName)
             {
-                string name = ((DefName)Left).Value;
+                string name = ((IdName)Left).Value;
                 env.Put(name, rvalue);
                 return rvalue;   // 赋值表达式的返回值
             }
@@ -325,19 +325,19 @@ namespace StoneComplier
 
         public string FuncName => ((ASTLeaf)Children[0]).ToString();
 
-        public ParameterList ParamList => (ParameterList)Children[1];
+        public ParameterList Parameters => (ParameterList)Children[1];
 
         public BlockStatement Body => (BlockStatement)Children[2];
 
         public override string ToString()
         {
-            return "(def " + FuncName + " " + ParamList.ToString() + " " + Body.ToString() + ")";
+            return "(def " + FuncName + " " + Parameters.ToString() + " " + Body.ToString() + ")";
         }
 
         public override object Eval(Env env)
         {
             // 函数定义阶段，创建函数对象，并添加到全局环境
-            env.Put(FuncName, new Function(FuncName, ParamList, Body, env));
+            env.Put(FuncName, new Function(FuncName, Parameters, Body, env));
             return FuncName;
         }
     }
@@ -398,8 +398,8 @@ namespace StoneComplier
             if (Size != param_list.Size)
                 throw new StoneException("Function arguments number not equal to definition");
 
-            Env nest_env = func.MakeEnv();    // 静态作用域：nest_env.outer是def函数时所处的环境，目前暂时就是全局环境
-            ((NestedEnv)nest_env).SetOuter(caller_env);   // 动态作用域
+            Env nest_env = func.MakeEnv();                // 静态作用域：nest_env.outer是def函数时所处的环境，目前暂时就是全局环境
+            //((NestedEnv)nest_env).SetOuter(caller_env);   // 动态作用域
 
             // 实参，挨个计算并以形参名添加进局部环境
             for (int i = 0; i < Size; ++i)
@@ -412,7 +412,32 @@ namespace StoneComplier
             }
 
             // 最后在局部环境中计算函数体
+            // 注意：nest_env正好在Body计算结束后被销毁，即局部变量的生命周期也终止
             return func.Body.Eval(nest_env);
         }
+    }
+
+    public class Closure: ASTList
+    {
+        public Closure(List<ASTree> list) : base(list)
+        {
+
+        }
+        public ParameterList Parameters => (ParameterList)Children[0];
+
+        public BlockStatement Body => (BlockStatement)Children[1];
+
+        public override string ToString()
+        {
+            return "(fun " + Parameters.ToString() + " " + Body.ToString() + ")";
+        }
+
+        public override object Eval(Env env)
+        {
+            // 直接返回闭包对象，env为闭包【定义】时所处的环境
+            // 调用闭包时如果局部环境中找不到就来这里定义时候的环境查找
+            return new Function(null, Parameters, Body, env);
+        }
+
     }
 }

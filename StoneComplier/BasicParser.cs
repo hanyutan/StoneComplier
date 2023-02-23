@@ -22,11 +22,15 @@ namespace StoneComplier
      * param_list: "(" [params] ")"             定义时用括号括起来，但可以没有参数
      * def: "def" IDENTIFIER param_list block   中间IDENTIFIER是函数名
      * args: expr { "," expr }                  调用时的实参
-     * postfix: "(" [args] ")"                  调用时用括号括起的实参列表
+     * arg_list: "(" [args] ")"                  调用时用括号括起的实参列表
      * 以下与原有不同：
-     * primary: ( "(" expr ")" | NUMBER | IDENTIFIER | STRING ) { postfix }     为啥放到末尾若干个？数字又不能接传参？？？
+     * primary: ( "(" expr ")" | NUMBER | IDENTIFIER | STRING ) { arg_list }     为啥放到末尾若干个？数字又不能接传参？？？
      * simple: expr [ args ]          当语句中只含有一个函数调用时，可以不加括号传参
      * program: [def | statement] (";" | EOL)
+     */
+
+    /* 闭包的语法规则
+     * primary: "fun" param_list block | 原先的primary定义
      */
 
     public class BasicParser
@@ -51,7 +55,7 @@ namespace StoneComplier
         protected static Parser primary = RT(typeof(PrimaryExpr))
             .Or(R.Sep("(").Ast(expr0).Sep(")"),
                 R.Number(typeof(NumLiteral)),
-                R.Identifier(reserved, typeof(DefName)),
+                R.Identifier(reserved, typeof(IdName)),
                 R.String(typeof(StringLiteral)));
         protected static Parser factor = R
             .Or(RT(typeof(NegativeExpr)).Sep("-").Ast(primary),
