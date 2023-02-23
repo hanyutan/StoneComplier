@@ -100,7 +100,12 @@ namespace StoneComplier
                 while(parser.Match(lexer))
                 {
                     ASTree t = parser.Parse(lexer);
-                    if (t is not ASTList || ((ASTList)t).Children.Count > 0)  // Leaf和有child的List，add进语法树；还可能解析出来空行，那就不用add
+                    /* 关于if 语句筛选的说明：
+                     * 叶节点需要被添加进语法树
+                     * 实参列表即使为空，也要添加进语法树（使得函数得到正常解析调用，否则只返回env中的Function对象）
+                     * 普通的分支节点，如果没有子节点，就不必再冗余地多加一个层级了（比如没有空行、检查到换行等）
+                     */
+                    if (t is not ASTList || t is Arguments || ((ASTList)t).Children.Count > 0)
                         ast.Add(t);
                     if (only_once)
                         break;
@@ -414,7 +419,14 @@ namespace StoneComplier
             }
         }
 
-        public Parser Reset(Type type = null)
+        public Parser Reset()
+        {
+            // 清空语法规则
+            elements = new List<Element>();
+            return this;
+        }
+
+        public Parser Reset(Type type)
         {
             // 清空语法规则
             elements = new List<Element>();
@@ -478,7 +490,7 @@ namespace StoneComplier
             // 即使省略，也会作为一颗仅有根节点的抽象语法树处理
             // question 没太懂？？？
             Parser p2 = new Parser(parser);
-            p2.Reset();
+            p2.Reset();   // 保留了factory
             elements.Add(new OrTree(parser, p2));
             return this;
         }
