@@ -53,11 +53,11 @@ namespace StoneComplier
         public static int to_int(object value)
         {
             if (value is string)
-                return Int32.Parse((string)value);
+                return int.Parse((string)value);
             else if (value is int)
                 return (int)value;
             else
-                throw new StoneException($"to_int failed: value = {value.ToString()}");
+                throw new StoneException($"to_int failed: value = {value}");
 
         }
 

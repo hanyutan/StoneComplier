@@ -5,6 +5,7 @@
 		fib(n-1) + fib(n-2)
 	}
 }
+print("test\"string\"\nhello world")
 time_start()
 print("result = " + fib(10))
 time_end()

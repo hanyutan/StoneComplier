@@ -24,10 +24,10 @@ namespace StoneComplier
         // 空白字符、(注释|整型字面量|字符串字面量) | 标识符
         // 对一行代码不断用regexPat去匹配，就能不断得到下一个单词
 
-        private List<Token> queue = new List<Token>();  // 保存读取的单词，peek取值并返回，read弹出并返回
-        private bool has_more;   // 是否还有待处理的源代码
-        private StreamReader reader;  // 逐行读取源代码
-        private int line_num = 0;
+        List<Token> queue = new List<Token>();  // 保存读取的单词，peek取值并返回，read弹出并返回
+        bool has_more;   // 是否还有待处理的源代码
+        StreamReader reader;  // 逐行读取源代码
+        int line_num = 0;
 
         public Lexer(FileStream fs)
         {
@@ -64,7 +64,7 @@ namespace StoneComplier
             }
         }
 
-        private bool FillQueue(int i)
+        bool FillQueue(int i)
         {
             // 如果目标index超过现有队列长度，则继续读取来填满token队列
             while(i >= queue.Count())
@@ -77,7 +77,7 @@ namespace StoneComplier
             return true;
         }
 
-        protected void ReadLine()
+        void ReadLine()
         {
             // 读取一行源代码进行词法分析，并填充进token队列
             ++line_num;
@@ -104,7 +104,7 @@ namespace StoneComplier
             queue.Add(new IdToken(line_num, Token.EOL));
         }
 
-        protected void AddToken(int line_num, Match match)
+        void AddToken(int line_num, Match match)
         {
             string value = match.Groups[1].Value;
             if (value != "")      // 尚未结束
@@ -115,13 +115,36 @@ namespace StoneComplier
                     if(match.Groups[3].Value != "")              // 整型字面量
                         token = new NumToken(line_num, int.Parse(value));
                     else if(match.Groups[4].Value != "")         // 字符串字面量
-                        token = new StrToken(line_num, value);
+                        token = new StrToken(line_num, ToStringLiterial(value));
                     else                                         // 保留字、变量名 类名 函数名、运算符、标点
                         token = new IdToken(line_num, value);
 
                     queue.Add(token);
                 }
             }
+        }
+
+        string ToStringLiterial(string str)
+        {
+            var res = new StringBuilder();
+            int len = str.Length - 1;
+            for(int i=1; i < len; ++i)  // 去掉头尾match的双引号
+            {
+                char c = str[i];
+                if(c=='\\' && i+1<len)
+                {
+                    char c2 = str[i + 1];
+                    if (c2 == '"' || c2 == '\\')
+                        c = str[++i];
+                    else if(c2 == 'n')
+                    {
+                        ++i;
+                        c = '\n';
+                    }
+                }
+                res.Append(c);
+            }
+            return res.ToString();
         }
     }
 }
