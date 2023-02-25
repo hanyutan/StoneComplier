@@ -229,7 +229,7 @@ namespace StoneComplier
 
         public override object Eval(Env env)
         {
-            object result = 0;
+            object result = null;
             // 返回最后一个语句的值
             foreach (ASTree child in Children)
             {
@@ -383,14 +383,21 @@ namespace StoneComplier
 
         public int Size => Children.Count;
 
-        public override object Eval(Env caller_env, object value)
+        public object ProcessNativeFunction(Env caller_env, object value)
         {
-            // value是从环境中拿到的Function对象 
-            // caller_env是调用函数时所处的环境，目前暂时就是全局环境
-            // 然后利用caller_env、实参列表children、函数对象value，来计算函数调用结果
-            if (value is not Function)
-                throw new StoneException("Wrong function");
+            NativeFunction func = (NativeFunction)value;
+            if(Size != func.ParamsNum)
+                throw new StoneException("Function arguments number not equal to definition");
 
+            object[] args = new object[func.ParamsNum];
+            for (int i = 0; i < Size; ++i)
+                args[i] = Children[i].Eval(caller_env);
+
+            return func.Invoke(args);
+
+        }
+        public object ProcessNormalFunction(Env caller_env, object value)
+        {
             Function func = (Function)value;
 
             // 形参，检查数量应与实参一致
@@ -414,6 +421,19 @@ namespace StoneComplier
             // 最后在局部环境中计算函数体
             // 注意：nest_env正好在Body计算结束后被销毁，即局部变量的生命周期也终止
             return func.Body.Eval(nest_env);
+        }
+
+        public override object Eval(Env caller_env, object value)
+        {
+            // value是从环境中拿到的Function对象 
+            // caller_env是调用函数时所处的环境，目前暂时就是全局环境
+            // 然后利用caller_env、实参列表children、函数对象value，来计算函数调用结果
+            if (value is NativeFunction)
+                return ProcessNativeFunction(caller_env, value);
+            else if (value is Function)
+                return ProcessNormalFunction(caller_env, value);
+            else
+                throw new StoneException("Wrong function");
         }
     }
 

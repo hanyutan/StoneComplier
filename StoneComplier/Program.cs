@@ -61,8 +61,8 @@ namespace StoneComplier
             //test_basic_interpreter();       // 解释器计算
             //test_def_function();            // 函数定义与调用
             //test_nest_function();           // 函数嵌套，动静态作用域演示
-            test_closure();                 // 测试闭包
-
+            //test_closure();                 // 测试闭包
+            test_native_function();         // 测试原生函数
             //string line = "test#aaatest#";
             //string pattern = @"test#";
             //foreach (Match match in Regex.Matches(line, pattern))
@@ -70,6 +70,13 @@ namespace StoneComplier
             //    Console.WriteLine(match.Value);
             //}
 
+        }
+
+        public static void test_native_function()
+        {
+            var env = new NestedEnv();
+            Natives.ToNativeEnv(env);
+            run("native_function", new FuncParser(), env);
         }
 
         public static void test_closure()
@@ -106,7 +113,8 @@ namespace StoneComplier
                     if (ast is not NullStatement)
                     {
                         object result = ast.Eval(env);
-                        Console.WriteLine(result.ToString());
+                        if(result!=null)
+                            Console.WriteLine(result.ToString());
                     }
                 }
             }

@@ -28,7 +28,7 @@ namespace StoneComplier
 
         public override string ToString()
         {
-            return "<fun: " + func_name + ">";
+            return "<fun: " + func_name + " >";
         }
     }
 }
