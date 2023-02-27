@@ -79,22 +79,48 @@ namespace StoneComplier
         public override object Eval(Env env)
         {
             if (Operator == "=")
-                return ComputeAssign(env);
+            {
+                object rvalue = Right.Eval(env);
+                return ComputeAssign(env, rvalue);
+            }
             else
                 return ComputeOp(env);
         }
 
-        object ComputeAssign(Env env)
+        object ComputeAssign(Env env, object rvalue)
         {
-            object rvalue = Right.Eval(env);
-            if (Left is IdName)
+            if(Left is PrimaryExpr)
+            {
+                // 类的成员变量/函数赋值，调用StoneObject.Write
+                PrimaryExpr primary = (PrimaryExpr)Left;
+                if(primary.HasPostfix(0) && primary.GetPostfix(0) is Dot)
+                {
+                    object target = primary.EvalNestPostfix(env, 1);  // 可能存在table.get().next.x = 3 这种嵌套形式，target最终计算等于table.get().next
+                    if (target is StoneObject)
+                        return SetField((StoneObject)target, (Dot)primary.GetPostfix(0), rvalue);
+                }
+            }
+            else if (Left is IdName)
             {
                 string name = ((IdName)Left).Value;
                 env.Put(name, rvalue);
                 return rvalue;   // 赋值表达式的返回值
             }
-            else
-                throw new StoneException("BinaryOp: ComputeAssign failed");
+            throw new StoneException("BinaryOp: ComputeAssign failed");
+        }
+
+        object SetField(StoneObject obj, Dot expr, object rvalue)
+        {
+            string member = expr.Name;
+            try
+            {
+                obj.Write(member, rvalue);
+                return rvalue;
+            }
+            catch
+            {
+                throw new StoneException($"BinaryOp.SetField: access memeber {member} failed at {GetLocation()}");
+            }
         }
 
         object ComputeOp(Env env)
@@ -160,36 +186,41 @@ namespace StoneComplier
 
         public override object Eval(Env env)
         {
-            return EvalNestArgs(env, 0);
+            return EvalNestPostfix(env, 0);
         }
 
-        object EvalNestArgs(Env env, int nest)
+        public object EvalNestPostfix(Env env, int nest)
         {
-            // 函数调用阶段，
+            // 函数调用阶段 or 索引类成员
 
             /* 如果是num/id/string，list.Count = 1, 就形成不了PrimaryExpr这个子节点
-             * 所以但凡走到这个函数了，都是函数调用
+             * 所以但凡走到这个函数了，都是函数调用阶段 or 索引类成员
              * 支持类似f(9)(3)形式，计算嵌套的每组函数实参args调用结果
              */
-            if (HasPosfix(nest))
+            if (HasPostfix(nest))
             {
-                object target = EvalNestArgs(env, nest + 1);
-                return GetPosfix(nest).Eval(env, target);   // 拿到Function，交给Arguments计算
+                object target = EvalNestPostfix(env, nest + 1);
+                // 拿到Function，交给Arguments计算
+                // 拿到ClassInfo，交给Dot计算
+                // 拿到StoneObject，交给Dot计算
+                return GetPostfix(nest).Eval(env, target);
             }
             else
             {
                 // Operand是函数名，Eval返回环境中查找到的Function函数对象
+                // Operand是类名，Eval返回环境中查找到的ClassInfo函数对象
+                // Operand是实例名，Eval返回环境中查找到的StoneObject函数对象
                 return Operand.Eval(env);
             }
         }
 
-        public Postfix GetPosfix(int nest)
+        public Postfix GetPostfix(int nest)
         {
             // 嵌套参数调用，从右向左，先把右侧的参数压栈存起来，最先处理的是左侧第一个调用
             return (Postfix)Children[Children.Count - 1 - nest];
         }
 
-        public bool HasPosfix(int nest)
+        public bool HasPostfix(int nest)
         {
             // 参数倒序，从右向左？？
             return Children.Count - 1 - nest > 0;
@@ -273,7 +304,6 @@ namespace StoneComplier
         }
     }
 
-
     public class WhileStatement : ASTList
     {
         public WhileStatement(List<ASTree> list) : base(list)
@@ -314,150 +344,5 @@ namespace StoneComplier
         {
             return null;
         }
-    }
-
-    public class DefStatement : ASTList
-    {
-        public DefStatement(List<ASTree> list) : base(list)
-        {
-
-        }
-
-        public string FuncName => ((ASTLeaf)Children[0]).ToString();
-
-        public ParameterList Parameters => (ParameterList)Children[1];
-
-        public BlockStatement Body => (BlockStatement)Children[2];
-
-        public override string ToString()
-        {
-            return "(def " + FuncName + " " + Parameters.ToString() + " " + Body.ToString() + ")";
-        }
-
-        public override object Eval(Env env)
-        {
-            // 函数定义阶段，创建函数对象，并添加到全局环境
-            env.Put(FuncName, new Function(FuncName, Parameters, Body, env));
-            return FuncName;
-        }
-    }
-
-    public class ParameterList : ASTList
-    {
-        public ParameterList(List<ASTree> list) : base(list)
-        {
-
-        }
-
-        public int Size => Children.Count;
-
-        public void Eval(Env env, int index, object value)
-        {
-            // 寻找第几个形参名，将实参值添加进局部环境
-            string param_name = ((ASTLeaf)Children[index]).ToString();
-            ((NestedEnv)env).AddNew(param_name, value);   // 参数一定是最开始没有，直接加进去
-        }
-    }
-
-    public class Postfix : ASTList
-    {
-        public Postfix(List<ASTree> list) : base(list)
-        {
-
-        }
-        public virtual object Eval(Env env, object value)
-        {
-            return null;
-        }
-        // 搞了一个抽象定义，作为各种参数形式的未来扩展吧？
-        // 子类Arguments表示实参序列
-        // 以后可以搞个子类ArrayRef用于支持数组
-    }
-
-    public class Arguments : Postfix
-    {
-        public Arguments(List<ASTree> list) : base(list)
-        {
-
-        }
-
-        public int Size => Children.Count;
-
-        public object ProcessNativeFunction(Env caller_env, object value)
-        {
-            NativeFunction func = (NativeFunction)value;
-            if(Size != func.ParamsNum)
-                throw new StoneException("Function arguments number not equal to definition");
-
-            object[] args = new object[func.ParamsNum];
-            for (int i = 0; i < Size; ++i)
-                args[i] = Children[i].Eval(caller_env);
-
-            return func.Invoke(args);
-
-        }
-        public object ProcessNormalFunction(Env caller_env, object value)
-        {
-            Function func = (Function)value;
-
-            // 形参，检查数量应与实参一致
-            ParameterList param_list = func.Parameters;
-            if (Size != param_list.Size)
-                throw new StoneException("Function arguments number not equal to definition");
-
-            Env nest_env = func.MakeEnv();                // 静态作用域：nest_env.outer是def函数时所处的环境，目前暂时就是全局环境
-            //((NestedEnv)nest_env).SetOuter(caller_env);   // 动态作用域
-
-            // 实参，挨个计算并以形参名添加进局部环境
-            for (int i = 0; i < Size; ++i)
-            {
-                // 实参值要在全局环境中计算
-                object arg_value = Children[i].Eval(caller_env);
-                // i 指代第几个参数，找到形参名加入到局部环境
-                param_list.Eval(nest_env, i, arg_value);
-
-            }
-
-            // 最后在局部环境中计算函数体
-            // 注意：nest_env正好在Body计算结束后被销毁，即局部变量的生命周期也终止
-            return func.Body.Eval(nest_env);
-        }
-
-        public override object Eval(Env caller_env, object value)
-        {
-            // value是从环境中拿到的Function对象 
-            // caller_env是调用函数时所处的环境，目前暂时就是全局环境
-            // 然后利用caller_env、实参列表children、函数对象value，来计算函数调用结果
-            if (value is NativeFunction)
-                return ProcessNativeFunction(caller_env, value);
-            else if (value is Function)
-                return ProcessNormalFunction(caller_env, value);
-            else
-                throw new StoneException("Wrong function");
-        }
-    }
-
-    public class Closure: ASTList
-    {
-        public Closure(List<ASTree> list) : base(list)
-        {
-
-        }
-        public ParameterList Parameters => (ParameterList)Children[0];
-
-        public BlockStatement Body => (BlockStatement)Children[1];
-
-        public override string ToString()
-        {
-            return "(fun " + Parameters.ToString() + " " + Body.ToString() + ")";
-        }
-
-        public override object Eval(Env env)
-        {
-            // 直接返回闭包对象，env为闭包【定义】时所处的环境
-            // 调用闭包时如果局部环境中找不到就来这里定义时候的环境查找
-            return new Function(null, Parameters, Body, env);
-        }
-
     }
 }

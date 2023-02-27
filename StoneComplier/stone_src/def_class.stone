@@ -1,0 +1,22 @@
+﻿class Position {
+	x = y = 0  // 字段 + 初始值
+	def move (nx, ny){
+		x = nx; y= ny;
+	}
+}
+p = Position.new
+p.move(3,4)
+p.x = 10
+print p.x + p.y
+
+class Pos3D extends Position {  // 继承
+	z = 0
+	def set(nx,ny,nz){
+		x = nx; y =ny; z = nz
+	}
+}
+p = Pos3D.new
+p.move(3,4)
+print p.x
+p.set(5,6,7)
+print p.z

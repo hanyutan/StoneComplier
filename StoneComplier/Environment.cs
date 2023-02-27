@@ -10,6 +10,16 @@ namespace StoneComplier
     {
         // 避免跟System.Environment冲突
         // 环境对象指一种用于记录变量名称和值的对应关系的数据结构
+        
+        /* 环境中可以记录的名值对有哪些：
+         * 整数值 int对象
+         * 字符串 string对象
+         * 函数 Function对象
+         * 原生函数 NativeFunction对象
+         * 类定义 ClassInfo对象
+         * Stone语言的对象 StoneObject对象
+         */
+
         public void Put(string name, object value);
         public object Get(string name);
         public bool IsContain(string name);

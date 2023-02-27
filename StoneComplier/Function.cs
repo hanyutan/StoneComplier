@@ -8,14 +8,14 @@ namespace StoneComplier
 {
     public class Function
     {
-        string func_name;
+        string name;
         public ParameterList Parameters;
-        public BlockStatement Body;
+        public BlockStatement Body;   // 保存了函数的抽象语法树
         Env env;   // 定义时的全局作用域
 
-        public Function(string func_name, ParameterList parameters, BlockStatement body, Env env)
+        public Function(string name, ParameterList parameters, BlockStatement body, Env env)
         {
-            this.func_name = func_name;
+            this.name = name;
             this.Parameters = parameters;
             this.Body = body;
             this.env = env;
@@ -28,7 +28,7 @@ namespace StoneComplier
 
         public override string ToString()
         {
-            return "<fun: " + func_name + " >";
+            return "<fun: " + name + " >";
         }
     }
 }
