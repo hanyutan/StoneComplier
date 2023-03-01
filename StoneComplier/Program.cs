@@ -3,7 +3,7 @@ using System.IO;
 
 namespace StoneComplier
 {
-    public class LexerRunner
+    public class TestRunner
     {
         public static void Main(string[] args)
         {
@@ -16,14 +16,22 @@ namespace StoneComplier
             //test_nest_function();           // 函数嵌套，动静态作用域演示
             //test_closure();                 // 测试闭包
             //test_native_function();         // 测试原生函数
-            test_def_class();               // 测试基于类的面向对象
+            //test_def_class();               // 测试基于类的面向对象
+            test_array();                   // 测试数组
+        }
+
+        public static void test_array()
+        {
+            var env = new NestedEnv();
+            Natives.ToNativeEnv(env);
+            run("array", new FuncParser(), env);
         }
 
         public static void test_def_class()
         {
             var env = new NestedEnv();
             Natives.ToNativeEnv(env);
-            run("def_class", new ClassParser(), env);
+            run("def_class", new FuncParser(), env);
         }
 
         public static void test_native_function()
@@ -35,7 +43,7 @@ namespace StoneComplier
 
         public static void test_closure()
         {
-            run("closure", new ClosureParser(), new NestedEnv());
+            run("closure", new FuncParser(), new NestedEnv());
         }
 
         public static void test_nest_function()

@@ -91,14 +91,27 @@ namespace StoneComplier
         {
             if(Left is PrimaryExpr)
             {
-                // 类的成员变量/函数赋值，调用StoneObject.Write
                 PrimaryExpr primary = (PrimaryExpr)Left;
-                if(primary.HasPostfix(0) && primary.GetPostfix(0) is Dot)
+                if(primary.HasPostfix(0))
                 {
                     object target = primary.EvalNestPostfix(env, 1);  // 可能存在table.get().next.x = 3 这种嵌套形式，target最终计算等于table.get().next
-                    if (target is StoneObject)
+                    if (primary.GetPostfix(0) is Dot && target is StoneObject)
+                    {
+                        // 类的成员变量/函数赋值，调用StoneObject.Write
                         return SetField((StoneObject)target, (Dot)primary.GetPostfix(0), rvalue);
+                    }
+                    else if(primary.GetPostfix(0) is ArrayRef && target is object[])
+                    {
+                        // 数组元素赋值
+                        object index = ((ArrayRef)primary.GetPostfix(0)).Index.Eval(env);
+                        if (index is int)
+                        {
+                            ((object[])target)[(int)index] = rvalue;
+                            return rvalue;
+                        }
+                    }
                 }
+                throw new StoneException("BinaryOp: ComputeAssign failed", this);
             }
             else if (Left is IdName)
             {

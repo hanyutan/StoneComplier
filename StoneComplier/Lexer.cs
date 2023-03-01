@@ -86,7 +86,7 @@ namespace StoneComplier
             {
                 line = reader.ReadLine();
             }
-            catch(IOException e)
+            catch
             {
                 throw new StoneException($"read line failed at {line_num}");
             }

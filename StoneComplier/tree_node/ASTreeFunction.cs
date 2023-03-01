@@ -63,7 +63,7 @@ namespace StoneComplier
         // 搞了一个抽象定义，作为各种参数形式的未来扩展
         // 子类Arguments表示实参序列
         // 子类Dot表示类的成员调用
-        // 以后可以搞个子类ArrayRef用于支持数组
+        // 子类ArrayRef用于支持数组索引
     }
 
     public class Arguments : Postfix

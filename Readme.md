@@ -19,7 +19,6 @@
     stone语言中目前不支持在函数内嵌套定义函数，也不考虑{}代码块的独立作用域，因此其始终只有2个作用域：全局、局部。  
     变量的生存周期可以通过环境对象的创建及清除时机来控制
     - 闭包是一种特殊的匿名函数，可以实现把函数赋值给变量，或者作为参数传递给其他函数
-
 * 5.基于类的面向对象
     - 仅支持单一继承
     - 由于不含静态类型，无法使用接口的概念
@@ -31,7 +30,11 @@
     - 不支持方法重载，同一个类中无法定义参数个数或类型不同的同名方法
     - stone语言的字段与方法之间没有明确的区分，方法是一种以Function对象为值的字段
     - 采用闭包的形式来表现StoneObject对象的内部结构，即利用环境能保存字段值的特性来表示对象。将对象视作一种环境，就很容易实现对该对象自身(this)的方法调用与变量访问，指代自身的this可省略。所谓“采用闭包的形式”，可这样理解：将成员函数引用的成员变量视为“自由变量”，实例化时构造函数会将变量与方法记录进env（相当于定义闭包），等实际调用实例的方法时，就会去定义时的环境来读写变量。
-    - 对于类的成员函数，会有3层嵌套环境：最内层的用于记录参数和局部变量；外一层用于记录StoneObject对象的字段与方法；最外层用于记录定义类时的全局变量。
+    - 对于类的成员函数，会有3层嵌套环境：最内层的用于记录参数和局部变量；外一层用于记录StoneObject对象的字段与方法；最外层用于记录定义类时的全局变量。  
+* 6.添加数组
+    - 数组长度无法中途修改
+    - 数组元素的类型无需保持一致，例如可以是["hello", 123]
+    - 数组本身也可以作为一个元素，来表示多维数组 [[...], [...]]
 
 ## 概念
 * 词法分析器 lexical analyzer / lexer / scanner
@@ -53,7 +56,7 @@
 ### 2. 增强
 - √ 增加static方法调用支持
 - √ 增加类与对象的语法，闭包实现
-- 增加数组功能
+- √ 增加数组功能
 - √ 增强解释器功能，能执行函数、支持闭包语法
 
 ### 3. 性能优化
@@ -117,9 +120,15 @@ todo 应该只有IDENTIFIER后面有可能加{ postfix }吧？为啥要统一放
 * `member: def | simple`
 * `class_body: "{" [member] { (";" | EOL) [member]} "}"`
 * `def_class: "class" IDENTIFIER [ "extends" IDENTIFIER ] class_body`
-* `postifx: "." IDENTIFIER | "(" [args] ")"`  
+* `postfix: "." IDENTIFIER | "(" [args] ")"`  
 不仅能表示实参序列，还支持基于句点.来调用类的字段与方法
-* `program: [def_class | def | statement] (";" | EOL)`
+* `program: [def_class | def | statement] (";" | EOL)`  
+
+### 数组的语法规则
+* `elements: expr { "," expr }`  
+* `primary: ( "[" [elements] "]" | "(" expr ")" | NUMBER | IDENTIFIER | STRING ) { postfix }`  
+* `postfix: "[" expr "]" | "." IDENTIFIER | "(" [args] ")"`  
+支持数组下标
 
 ## 数据类型
 
@@ -130,3 +139,4 @@ todo 应该只有IDENTIFIER后面有可能加{ postfix }吧？为啥要统一放
 * 原生函数 NativeFunction对象
 * 类定义 ClassInfo对象
 * Stone语言的对象 StoneObject对象
+* Stone语言的数组 object[]数组对象
