@@ -22,7 +22,7 @@ namespace StoneComplier
 
         public void Put(string name, object value);
         public object Get(string name);
-        public bool IsContain(string name);
+        public Env Where(string name);
     }
 
     public class BasicEnv: Env
@@ -39,18 +39,17 @@ namespace StoneComplier
         public object Get(string name)
         {
             if(maps.ContainsKey(name))
-            {
                 return maps[name];
-            }
+
             throw new StoneException($"Environment not contains {name}");
         }
 
-        public bool IsContain(string name)
+        public Env Where(string name)
         {
             if (maps.ContainsKey(name))
-                return true;
+                return this;
             else
-                return false;
+                return null;
         }
     }
 
@@ -76,23 +75,28 @@ namespace StoneComplier
             outer = env;
         }
 
-        public void AddNew(string name, object value)
+        public void PutInner(string name, object value)
         {
-            maps.Add(name, value);
+            // 直接向局部作用域添加，不考虑outer
+            if (maps.ContainsKey(name))
+                maps[name] = value;
+            else
+                maps.Add(name, value);
         }
 
         public void Put(string name, object value)
         {
-            bool inner_contain = maps.ContainsKey(name);
-            bool outer_contain = outer != null && outer.IsContain(name);
-            if(inner_contain)
-                maps[name] = value;   // 内部作用域有，更新内部值
+            Env e = Where(name);
+            if (e != null && e == outer)
+            {
+                // 外部作用域有，更新外部值
+                e.Put(name, value);
+            }
             else
             {
-                if (outer_contain)
-                    outer.Put(name, value);   // 外部作用域有，更新外部值
-                else
-                    maps.Add(name, value);    // 内部外部作用域都没有，新增内部值
+                // 内部作用域有，更新内部值
+                // 内部外部作用域都没有，新增内部值
+                PutInner(name, value);
             }
         }
 
@@ -106,19 +110,14 @@ namespace StoneComplier
             throw new StoneException($"Environment not contains {name}");
         }
 
-        public bool IsContain(string name)
+        public Env Where(string name)
         {
             if (maps.ContainsKey(name))
-            {
-                return true;
-            }
+                return this;
+            else if (outer == null)
+                return null;
             else
-            {
-                if (outer == null)
-                    return false;
-                else
-                    return outer.IsContain(name);
-            }
+                return outer.Where(name);
         }
     }
 }

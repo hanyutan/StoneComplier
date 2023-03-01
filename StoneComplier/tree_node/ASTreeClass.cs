@@ -16,6 +16,7 @@ namespace StoneComplier
         public override object Eval(Env env)
         {
             // 执行类定义中的每个语句，将成员添加进env
+            // 可能会有点问题，如果有成员变量与全局环境中的变量同名，这样写会直接修改全局变量
             foreach (var child in Children)
                 child.Eval(env);
             return null;
@@ -112,10 +113,11 @@ namespace StoneComplier
 
         void InitObject(ClassInfo info, Env env)
         {
-            // 类中定义的成员初始化
+            // 初始化父类
             if(info.SuperClass != null)
                 InitObject(info.SuperClass, env);
 
+            // 初始化本类中的成员
             info.Body.Eval(env);
         }
     }

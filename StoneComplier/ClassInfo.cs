@@ -20,13 +20,16 @@ namespace StoneComplier
         {
             this.definition = definition;
             this.env = env;
-            object obj = env.Get(definition.SuperClass);
-            if (obj == null)
+            if (definition.SuperClass == null)
                 SuperClass = null;
-            else if (obj is ClassInfo)
-                SuperClass = (ClassInfo)obj;
             else
-                throw new StoneException("ClassInfo: unknown super class");
+            {
+                object obj = env.Get(definition.SuperClass);
+                if (obj is ClassInfo)
+                    SuperClass = (ClassInfo)obj;
+                else
+                    throw new StoneException("ClassInfo: unknown super class");
+            }
         }
 
         public override string ToString()

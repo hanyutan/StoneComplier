@@ -46,7 +46,7 @@ namespace StoneComplier
         {
             // 寻找第几个形参名，将实参值添加进局部环境
             string param_name = ((ASTLeaf)Children[index]).ToString();
-            ((NestedEnv)env).AddNew(param_name, value);   // 参数一定是最开始没有，直接加进去
+            ((NestedEnv)env).PutInner(param_name, value);   // 参数一定是最开始没有，直接加进去
         }
     }
 
