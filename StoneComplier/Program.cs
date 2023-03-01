@@ -14,9 +14,9 @@ namespace StoneComplier
             //test_basic_interpreter();       // 解释器计算
             //test_def_function();            // 函数定义与调用
             //test_nest_function();           // 函数嵌套，动静态作用域演示
-            //test_closure();                 // 测试闭包
+            test_closure();                 // 测试闭包
             //test_native_function();         // 测试原生函数
-            test_def_class();               // 测试基于类的面向对象
+            //test_def_class();               // 测试基于类的面向对象
 
 
 
