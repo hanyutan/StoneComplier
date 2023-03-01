@@ -16,8 +16,8 @@ namespace StoneComplier
         // 二元运算符：|==|<=|>=|&&|\|\|
         // 一元运算符和标点：\p{P}
         // 字符串字面量: "(\\"|\\\\|\\n|[^"])*"    整体的模式为"(pattern)*"，即双引号括起字符串，内部根据某个pattern匹配至少0次
-        // ——模式pattern与\"、\\、\n、或者除双引号之外（防止字符串提前终止）的任意一个字符相匹配
-        // ——由于正则表达式中要通过\来表达转义字符，所以想要匹配\"，就需要\\"
+        // 模式pattern与\"、\\、\n、或者除双引号之外（防止字符串提前终止）的任意一个字符相匹配
+        // 由于正则表达式中要通过\来表达转义字符，所以想要匹配\"，就需要\\"
     
         public static readonly string regex_pattern = "\\s*((//.*)|([0-9]+)|(\"(\\\\\"|\\\\\\\\|\\\\n|[^\"])*\")|([A-Z_a-z][A-Z_a-z0-9]*|==|<=|>=|&&|\\|\\||\\p{IsBasicLatin}))?";
         // 汇总：\s*((//.*)|(pat1)|(pat2)|pat3)?
@@ -46,7 +46,7 @@ namespace StoneComplier
             }
             else
             {
-                return Token.EOF;   // question 为啥不是EOL
+                return Token.EOF;  // 文本结束，不再能读取
             }
         }
 
@@ -60,7 +60,7 @@ namespace StoneComplier
             }
             else
             {
-                return Token.EOF;  // question 为啥不是EOL
+                return Token.EOF;  // 文本结束，不再能读取
             }
         }
 
@@ -88,7 +88,7 @@ namespace StoneComplier
             }
             catch(IOException e)
             {
-                throw new StoneException("read line failed...");
+                throw new StoneException($"read line failed at {line_num}");
             }
 
             if (line == null)

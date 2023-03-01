@@ -60,6 +60,7 @@ namespace StoneComplier
             {
                 Lexer lexer = new Lexer(fsRead);
 
+                // 解释运行代码
                 Console.WriteLine("[eval output]");
                 while (lexer.Peek(0) != Token.EOF)
                 {

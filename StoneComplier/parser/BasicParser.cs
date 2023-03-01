@@ -6,41 +6,6 @@ using System.Threading.Tasks;
 
 namespace StoneComplier
 {
-    /* stone BNF 基础语法规则（不考虑优先级，用其他方法处理）
-    primary: "(" expr ")" | NUMBER | IDENTIFIER | STRING    基本元素：括号括起的表达式、整型字面量、标识符、字符串字面量
-    factor: "-" primary | primary                           注：感觉可以和primary合并到一起，前面加个["-"](...|...|...|...)
-    expr: factor { OP factor }                              双目运算符连接的两侧
-    block: "{" [statement] {(";" | EOL) [statement]} "}"    由大括号括起来的statement语句序列，语句之间用分块或换行符分割，支持空语句（注：为啥不用{[statement] (";" | EOL)}来表示？代码块中最后一句可以省略分号或换行符）
-    simple: expr                                            简单语句
-    statement: "if" expr block ["else" block] | "while" expr block | simple 可以是if语句、wile语句、或者简单表达式语句
-    program: [statement] (";" | EOL)                        一行stone语言程序，可以表示空行（注：怎样区分一行program和statement？program既可以是处于代码块之外的一条语句，也可以是一行完整的程序）
-     */
-
-    /* 函数相关的语法规则
-     * param: IDENTIFIER                        定义时的形参，倒是不需要指定类型，直接写个变量名就好
-     * params: param { "," param }              参数之间以逗号分隔
-     * param_list: "(" [params] ")"             定义时用括号括起来，但可以没有参数
-     * def: "def" IDENTIFIER param_list block   中间IDENTIFIER是函数名
-     * args: expr { "," expr }                  调用时的实参
-     * postfix: "(" [args] ")"                  调用时用括号括起的实参列表，叫做postfix是因为以后还要扩充，去代表不同的类似后缀一样的情况
-     * 以下与原有不同：
-     * primary: ( "(" expr ")" | NUMBER | IDENTIFIER | STRING ) { postfix }     为啥放到末尾若干个？数字又不能接传参？？？
-     * simple: expr [ args ]          当语句中只含有一个函数调用时，可以不加括号传参
-     * program: [def | statement] (";" | EOL)
-     */
-
-    /* 闭包的语法规则
-     * primary: "fun" param_list block | 原先的primary定义
-     */
-
-    /* 类的语法规则
-     * member: def | simple
-     * class_body: "{" [member] { (";" | EOL) [member]} "}"
-     * def_class: "class" IDENTIFIER [ "extends" IDENTIFIER ] class_body
-     * postifx: "." IDENTIFIER | "(" [args] ")"              不仅能表示实参序列，还支持基于句点.来调用类的字段与方法
-     * program: [def_class | def | statement] (";" | EOL)
-     */
-
     public class BasicParser
     {
         protected static List<string> reserved = new List<string>();   // 不会作为变量名使用
@@ -48,7 +13,6 @@ namespace StoneComplier
 
         // 首先定义了大量Parser类型字段，将BNF语法规则转换为c#语言程序
         // 这些Parser对象能够根据各种类型的非终结符模式来执行语法分析，返回一颗抽象语法树
-
 
         // 用于简化写法
         protected static Parser R => Parser.Rule();

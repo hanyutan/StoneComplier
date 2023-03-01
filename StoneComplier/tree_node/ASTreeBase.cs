@@ -40,7 +40,7 @@ namespace StoneComplier
         public virtual object Eval(Env env)
         {
             // 会递归调用子节点的eval方法
-            throw new StoneException($"Eval failed: {ToString()}");
+            throw new StoneException($"Eval failed: {ToString()}", this);
         }
     }
 
@@ -83,7 +83,7 @@ namespace StoneComplier
 
         public override object Eval(Env env)
         {
-            throw new StoneException($"Eval failed: {ToString()}");
+            throw new StoneException($"Eval failed: {ToString()}", this);
         }
     }
 
@@ -116,7 +116,7 @@ namespace StoneComplier
 
         public override object Eval(Env env)
         {
-            throw new StoneException($"Eval failed: {ToString()}");
+            throw new StoneException($"Eval failed: {ToString()}", this);
         }
     }
 

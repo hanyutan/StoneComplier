@@ -60,8 +60,9 @@ namespace StoneComplier
         {
             return null;
         }
-        // 搞了一个抽象定义，作为各种参数形式的未来扩展吧？
+        // 搞了一个抽象定义，作为各种参数形式的未来扩展
         // 子类Arguments表示实参序列
+        // 子类Dot表示类的成员调用
         // 以后可以搞个子类ArrayRef用于支持数组
     }
 
@@ -78,7 +79,7 @@ namespace StoneComplier
         {
             NativeFunction func = (NativeFunction)value;
             if (Size != func.ParamsNum)
-                throw new StoneException("Function arguments number not equal to definition");
+                throw new StoneException("Function arguments number not equal to definition", this);
 
             object[] args = new object[func.ParamsNum];
             for (int i = 0; i < Size; ++i)
@@ -94,7 +95,7 @@ namespace StoneComplier
             // 形参，检查数量应与实参一致
             ParameterList param_list = func.Parameters;
             if (Size != param_list.Size)
-                throw new StoneException("Function arguments number not equal to definition");
+                throw new StoneException("Function arguments number not equal to definition", this);
 
             Env nest_env = func.MakeEnv();                // 静态作用域：nest_env.outer是def函数时所处的环境，目前暂时就是全局环境
             //((NestedEnv)nest_env).SetOuter(caller_env);   // 动态作用域
@@ -125,7 +126,7 @@ namespace StoneComplier
             else if (value is Function)
                 return ProcessNormalFunction(caller_env, value);
             else
-                throw new StoneException("Wrong function");
+                throw new StoneException("Wrong function", this);
         }
     }
 }

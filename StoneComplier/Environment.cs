@@ -11,15 +11,6 @@ namespace StoneComplier
         // 避免跟System.Environment冲突
         // 环境对象指一种用于记录变量名称和值的对应关系的数据结构
         
-        /* 环境中可以记录的名值对有哪些：
-         * 整数值 int对象
-         * 字符串 string对象
-         * 函数 Function对象
-         * 原生函数 NativeFunction对象
-         * 类定义 ClassInfo对象
-         * Stone语言的对象 StoneObject对象
-         */
-
         public void Put(string name, object value);
         public object Get(string name);
         public Env Where(string name);
@@ -52,13 +43,6 @@ namespace StoneComplier
                 return null;
         }
     }
-
-    /* 变量的作用域通常由嵌套结构实现，需要为每一种作用域准备一个单独的环境，并根据需要来嵌套环境
-     * 查找变量时，程序首先查找与最内层作用域对应的环境，如果没找到再向外逐层查找
-     * stone语言中目前不支持在函数内嵌套定义函数，也不考虑{}代码块的独立作用域，因此其始终只有2个作用域：全局、局部
-     * 
-     * 变量的生存周期可以通过环境对象的创建及清除时机来控制
-     */
 
     public class NestedEnv : Env
     {

@@ -41,12 +41,12 @@ namespace StoneComplier
 
         public virtual int GetNumber()
         {
-            throw new StoneException("not number token");
+            throw new StoneException($"not number token at {line_number}");
         }
 
         public virtual string GetText()
         {
-            return "";
+            throw new StoneException($"not string token at {line_number}");
         }
     }
 

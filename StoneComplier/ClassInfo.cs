@@ -28,7 +28,7 @@ namespace StoneComplier
                 if (obj is ClassInfo)
                     SuperClass = (ClassInfo)obj;
                 else
-                    throw new StoneException("ClassInfo: unknown super class");
+                    throw new StoneException("ClassInfo: unknown super class", definition);
             }
         }
 

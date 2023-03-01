@@ -68,7 +68,7 @@ namespace StoneComplier
                 }
                 else
                 {
-                    throw new StoneException("[parse failed] expected num token in factor");
+                    throw new StoneException($"[parse failed] expected num token in factor at {token.LineNumber}");
                 }
             }
         }
@@ -94,7 +94,7 @@ namespace StoneComplier
             // 核实，然后扔掉
             Token token = lexer.Read();
             if (!(token.Type == TokenType.Identifier && token.GetText() == name))
-                throw new StoneException($"[parse failed] expected token: {token.GetText()}");
+                throw new StoneException($"[parse failed] expected token: {token.GetText()} at {token.LineNumber}");
         }
     }
 }

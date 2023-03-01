@@ -9,12 +9,8 @@ namespace StoneComplier
     public class FuncParser: BasicParser
     {
         // 支持函数的解析器，继承自BasicParser，这里仅定义新增的部分
-        
-        /* 暂且规定stone语言的函数必定有返回值，没有return语句，所以就把最后一句的结果返回
-         * def语句仅能用于最外层代码，暂不支持用户在代码块{}中定义函数
-         */
 
-        protected static Parser param_ = R.Identifier(reserved);  // 没有加type，可能是因为不是变量名所以不需要作为节点加入语法树
+        protected static Parser param_ = R.Identifier(reserved);     // 没有加type，可能是因为不是变量名所以不需要作为节点加入语法树
         protected static Parser params_ = RT(typeof(ParameterList)).Ast(param_).Repeat(R.Sep(",").Ast(param_));  // 防止跟关键字params冲突
         protected static Parser param_list = R.Sep("(").Maybe(params_).Sep(")");
         // 使用Maybe而不是Option，保证有一颗子树（仅有根节点，子节点数量为0，正好表示没有参数）

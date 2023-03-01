@@ -10,7 +10,8 @@ namespace StoneComplier
     {
         public static void ToNativeEnv(Env env)
         {
-            // todo 其实可以再封装一层，Natives里有很多static方法，其内部调用了c#原生方法，然后添加env时get Natives method即可
+            // Natives里有很多static方法，其内部调用了c#原生方法，然后添加env时get Natives method即可
+            // 不一定要反射直接拿到c#函数
             AppendNativeFunction(env, "print");
             AppendNativeFunction(env, "read");
             AppendNativeFunction(env, "length");
@@ -41,7 +42,7 @@ namespace StoneComplier
 
         public static string read()
         {
-            // 输入字符串
+            // todo 输入字符串
             return null;
         }
 

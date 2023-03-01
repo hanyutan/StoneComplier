@@ -14,7 +14,7 @@ namespace StoneComplier
         public NumLiteral(Token t) : base(t)
         {
             if (t.Type != TokenType.Number)
-                throw new StoneException("Token is not number");
+                throw new StoneException("Token is not number", this);
         }
 
         public int Value => token.GetNumber();
@@ -27,11 +27,11 @@ namespace StoneComplier
 
     public class StringLiteral : ASTLeaf
     {
-        // 整型字面量
+        // 字符串字面量
         public StringLiteral(Token t) : base(t)
         {
             if (t.Type != TokenType.String)
-                throw new StoneException("Token is not string");
+                throw new StoneException("Token is not string", this);
         }
 
         public string Value => token.GetText();
@@ -49,7 +49,7 @@ namespace StoneComplier
         public IdName(Token t) : base(t)
         {
             if (t.Type != TokenType.Identifier)
-                throw new StoneException("Token is not identifier");
+                throw new StoneException("Token is not identifier", this);
         }
 
         public string Value => token.GetText();
@@ -66,7 +66,7 @@ namespace StoneComplier
         public BinaryOp(List<ASTree> list) : base(list)
         {
             if (list.Count != 3)
-                throw new StoneException("BinaryOp need 3 elements");
+                throw new StoneException("BinaryOp need 3 elements", this);
         }
 
         public ASTree Left => Children[0];
@@ -106,7 +106,7 @@ namespace StoneComplier
                 env.Put(name, rvalue);
                 return rvalue;   // 赋值表达式的返回值
             }
-            throw new StoneException("BinaryOp: ComputeAssign failed");
+            throw new StoneException("BinaryOp: ComputeAssign failed", this);
         }
 
         object SetField(StoneObject obj, Dot expr, object rvalue)
@@ -119,7 +119,7 @@ namespace StoneComplier
             }
             catch
             {
-                throw new StoneException($"BinaryOp.SetField: access memeber {member} failed at {GetLocation()}");
+                throw new StoneException($"BinaryOp.SetField: access memeber {member} failed", this);
             }
         }
 
@@ -145,7 +145,7 @@ namespace StoneComplier
                     return left == right ? 1 : 0;
             }
             else
-                throw new StoneException("BinaryOp: ComputeOp failed");
+                throw new StoneException("BinaryOp: ComputeOp failed", this);
         }
 
         object ComputeNumber(int left, string op, int right)
@@ -161,7 +161,7 @@ namespace StoneComplier
                 case ">": return left > right ? 1 : 0;
                 case "<": return left < right ? 1 : 0;
                 default:
-                    throw new StoneException($"BinaryOp: ComputeNumber failed, operator = {op}");
+                    throw new StoneException($"BinaryOp: ComputeNumber failed, operator = {op}", this);
             }
         }
     }
@@ -222,7 +222,6 @@ namespace StoneComplier
 
         public bool HasPostfix(int nest)
         {
-            // 参数倒序，从右向左？？
             return Children.Count - 1 - nest > 0;
         }
     }
@@ -247,7 +246,7 @@ namespace StoneComplier
             if (result is int)
                 return -(int)result;
             else
-                throw new StoneException("NegativeExpr: not int");
+                throw new StoneException("NegativeExpr: not int", this);
         }
     }
 

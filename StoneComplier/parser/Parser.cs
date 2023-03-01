@@ -372,7 +372,7 @@ namespace StoneComplier
                     return new Factory(func);
                 }
                 
-                throw new StoneException("No Such Constructor");
+                throw new StoneException($"Get {type.Name} constructor failed");
             }
         }
 
@@ -428,7 +428,7 @@ namespace StoneComplier
 
         public Parser Reset(Type type)
         {
-            // 清空语法规则
+            // 清空语法规则，重建工厂
             elements = new List<Element>();
             factory = Factory.GetForASTList(type);
             return this;
@@ -488,7 +488,6 @@ namespace StoneComplier
         {
             // Maybe: 向规则中添加可省略的非终结符
             // 即使省略，也会作为一颗仅有根节点的抽象语法树处理
-            // question 没太懂？？？
             Parser p2 = new Parser(parser);
             p2.Reset();   // 保留了factory
             elements.Add(new OrTree(parser, p2));

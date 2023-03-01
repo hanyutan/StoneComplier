@@ -12,7 +12,7 @@ namespace StoneComplier
 
         }
 
-        public StoneException(string text, ASTree tree) : base(text + " " /*+ tree.location()*/)
+        public StoneException(string text, ASTree tree) : base($"{text} at line: {tree.GetLocation()}")
         {
 
         }

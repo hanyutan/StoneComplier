@@ -17,7 +17,7 @@ namespace StoneComplier
 
         public override string ToString()
         {
-            return "<object: " + this.GetHashCode() + " >"; ;
+            return "<object: " + GetHashCode() + " >"; ;
         }
 
         public object Read(string member)
@@ -31,7 +31,6 @@ namespace StoneComplier
             Env e = GetEnv(member);
             ((NestedEnv)e).PutInner(member, value);
             // 索引类成员过来的，肯定要在局部环境中处理，不用考虑outer
-            // （但应该不会出现这种情况吧？Dot.Eval会对没定义的成员名进行拦截）
         }
 
         Env GetEnv(string member)
@@ -41,7 +40,7 @@ namespace StoneComplier
             if (e != null && e == env)
                 return e;
             else
-                throw new StoneException($"StoneObject member {member} access failed");
+                throw new StoneException($"StoneObject {GetHashCode()} member {member} access failed");
         }
     }
 }

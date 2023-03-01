@@ -16,7 +16,8 @@ namespace StoneComplier
         public override object Eval(Env env)
         {
             // 执行类定义中的每个语句，将成员添加进env
-            // 可能会有点问题，如果有成员变量与全局环境中的变量同名，这样写会直接修改全局变量
+            // todo 可能会有点问题，如果有成员变量与全局环境中的变量同名，这样写会直接修改全局变量
+            // 可能的措施：为member成员独立搞个语法树节点，重新定义Eval，直接加进局部环境
             foreach (var child in Children)
                 child.Eval(env);
             return null;
@@ -91,7 +92,7 @@ namespace StoneComplier
                     return obj;
                 }
                 else
-                    throw new StoneException($"Dot: {Name} access failed, not support static member");
+                    throw new StoneException($"Dot: {Name} access failed, not support static member", this);
 
             }
             else if(value is StoneObject)
@@ -104,11 +105,11 @@ namespace StoneComplier
                 }
                 catch
                 {
-                    throw new StoneException($"Dot: member {Name} access failed, not defined");
+                    throw new StoneException($"Dot: member {Name} access failed, not defined", this);
                 }
             }
             else
-                throw new StoneException($"Dot: value type wrong {value.GetType().Name} ");
+                throw new StoneException($"Dot: value type wrong {value.GetType().Name}", this);
         }
 
         void InitObject(ClassInfo info, Env env)
