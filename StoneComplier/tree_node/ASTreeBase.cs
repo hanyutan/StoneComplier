@@ -42,6 +42,11 @@ namespace StoneComplier
             // 会递归调用子节点的eval方法
             throw new StoneException($"Eval failed: {ToString()}", this);
         }
+
+        public virtual void Lookup(Symbols symbols)
+        {
+
+        }
     }
 
     public class ASTList: ASTree
@@ -84,6 +89,12 @@ namespace StoneComplier
         public override object Eval(Env env)
         {
             throw new StoneException($"Eval failed: {ToString()}", this);
+        }
+
+        public override void Lookup(Symbols symbols)
+        {
+            foreach (var child in Children)
+                child.Lookup(symbols);
         }
     }
 

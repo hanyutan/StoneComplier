@@ -28,8 +28,20 @@ namespace StoneComplier
         public override object Eval(Env env)
         {
             // 函数定义阶段，创建函数对象，并添加到全局环境
-            env.Put(Name, new Function(Name, Parameters, Body, env));
+            if (Config.OptimizeVariableRW)
+                env.Put(0, index, new OptFunction(Parameters, Body, env, size));
+            else
+                env.Put(Name, new Function(Name, Parameters, Body, env));
             return Name;
+        }
+
+        int index;     // 函数在全局环境中的索引
+        int size;      // 函数里参数与局部变量的数量
+
+        public override void Lookup(Symbols symbols)
+        {
+            index = symbols.PutInner(Name);                     // 将函数名存入最内层的环境（可以覆盖外层同名函数）
+            size = Closure.Lookup(symbols, Parameters, Body);   // 函数里参数与局部变量的数量
         }
     }
 
@@ -45,8 +57,25 @@ namespace StoneComplier
         public void Eval(Env env, int index, object value)
         {
             // 寻找第几个形参名，将实参值添加进局部环境
-            string param_name = ((ASTLeaf)Children[index]).ToString();
-            ((NestedEnv)env).PutInner(param_name, value);   // 参数一定是最开始没有，直接加进去
+            if (Config.OptimizeVariableRW)
+                env.Put(0, offsets[index], value);
+            else
+            {
+                string param_name = ((ASTLeaf)Children[index]).ToString();
+                env.PutInner(param_name, value);   // 参数一定是最开始没有，直接加进去
+            }
+        }
+
+        int[] offsets;     // 存储每个参数在局部环境中的index
+        public override void Lookup(Symbols symbols)
+        {
+            // 通过Symbols查找变量的保存位置，将结果记录到相应的字段中
+            offsets = new int[Size];
+            for(int i = 0; i < Size; ++i)
+            {
+                string param_name = ((ASTLeaf)Children[i]).ToString();
+                offsets[i] = symbols.PutInner(param_name);  // 参数一定是最开始没有，直接加进去
+            }
         }
     }
 

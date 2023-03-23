@@ -3,6 +3,11 @@ using System.IO;
 
 namespace StoneComplier
 {
+    public class Config
+    {
+        public static readonly bool OptimizeVariableRW = true;
+    }
+
     public class TestRunner
     {
         public static void Main(string[] args)
@@ -17,7 +22,15 @@ namespace StoneComplier
             //test_closure();                 // 测试闭包
             //test_native_function();         // 测试原生函数
             //test_def_class();               // 测试基于类的面向对象
-            test_array();                   // 测试数组
+            //test_array();                   // 测试数组
+            test_optimization();            // 测试优化变量读写性能
+        }
+
+        public static void test_optimization()
+        {
+            var env = new ResizableArrayEnv();
+            Natives.ToNativeEnv(env);
+            run("def_function", new FuncParser(), env);
         }
 
         public static void test_array()
@@ -53,7 +66,9 @@ namespace StoneComplier
 
         public static void test_def_function()
         {
-            run("def_function", new FuncParser(), new NestedEnv());
+            var env = new NestedEnv();
+            Natives.ToNativeEnv(env);   // 为了与优化后进行速度对比
+            run("def_function", new FuncParser(), env);
         }
 
         public static void test_basic_interpreter()
@@ -75,6 +90,8 @@ namespace StoneComplier
                     ASTree ast = parser.Parse(lexer);
                     if (ast is not NullStatement)
                     {
+                        if(Config.OptimizeVariableRW)
+                            ast.Lookup(env.GetSymbols());
                         object result = ast.Eval(env);
                         if(result!=null)
                             Console.WriteLine(result.ToString());

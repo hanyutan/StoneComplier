@@ -56,8 +56,49 @@ namespace StoneComplier
 
         public override object Eval(Env env)
         {
-            return env.Get(Value);
+            if (Config.OptimizeVariableRW)
+            {
+                if (index == UNKNOWN)
+                    return env.Get(Value);   // 新增代码时未作记录的全局变量，还按老方法用变量名查找
+                else
+                    return env.Get(nest, index);
+            }
+            else
+                return env.Get(Value);
         }
+
+        static readonly int UNKNOWN = -1;
+        int nest;     // 记录变量存放的环境嵌套层数
+        int index = UNKNOWN;    // 记录变量对应的数组索引
+
+        public override void Lookup(Symbols symbols)
+        {
+            // 通过Symbols查找变量的保存位置，将结果记录到相应的字段中
+            Location loc = symbols.Get(Value);
+            if (loc == null)
+                throw new StoneException($"Undefined name: {Value}");
+            else
+            {
+                nest = loc.nest;
+                index = loc.index;
+            }
+        }
+
+        public void LookupForAssign(Symbols symbols)
+        {
+            Location loc = symbols.Put(Value);   // 可能是局部环境新增的变量，也可能是引用全局变量
+            nest = loc.nest;
+            index = loc.index;
+        }
+
+        public void EvalForAssign(Env env, object value)
+        {
+            if (index == UNKNOWN)
+                env.Put(Value, value);
+            else
+                env.Put(nest, index, value);
+        }
+
     }
 
     public class BinaryOp : ASTList
@@ -85,6 +126,22 @@ namespace StoneComplier
             }
             else
                 return ComputeOp(env);
+        }
+
+        public override void Lookup(Symbols symbols)
+        {
+            if (Operator == "=")
+            {
+                if(Left is IdName)
+                {
+                    ((IdName)Left).LookupForAssign(symbols);
+                    Right.Lookup(symbols);
+                    return;
+                }
+            }
+
+            Left.Lookup(symbols);
+            Right.Lookup(symbols);
         }
 
         object ComputeAssign(Env env, object rvalue)
@@ -115,8 +172,13 @@ namespace StoneComplier
             }
             else if (Left is IdName)
             {
-                string name = ((IdName)Left).Value;
-                env.Put(name, rvalue);
+                if (Config.OptimizeVariableRW)
+                    ((IdName)Left).EvalForAssign(env, rvalue);
+                else
+                {
+                    string name = ((IdName)Left).Value;
+                    env.Put(name, rvalue);
+                }
                 return rvalue;   // 赋值表达式的返回值
             }
             throw new StoneException("BinaryOp: ComputeAssign failed", this);

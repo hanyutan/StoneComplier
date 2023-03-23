@@ -29,7 +29,7 @@ namespace StoneComplier
         public void Write(string member, object value)
         {
             Env e = GetEnv(member);
-            ((NestedEnv)e).PutInner(member, value);
+            e.PutInner(member, value);
             // 索引类成员过来的，肯定要在局部环境中处理，不用考虑outer
         }
 

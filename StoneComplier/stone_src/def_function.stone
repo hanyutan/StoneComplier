@@ -5,5 +5,6 @@
 		fib(n-1) + fib(n-2)
 	}
 }
-
-fib(10)
+time_start()
+fib(33)
+time_end()
