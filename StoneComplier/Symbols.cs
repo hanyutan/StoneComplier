@@ -52,7 +52,7 @@ namespace StoneComplier
                 return table[key];
         }
 
-        public Location Get(string key, int nest = 0)
+        public virtual Location Get(string key, int nest = 0)
         {
             if(!table.ContainsKey(key))
             {
@@ -68,7 +68,7 @@ namespace StoneComplier
             }
         }
 
-        public int PutInner(string key)
+        public virtual int PutInner(string key)
         {
             if (!table.ContainsKey(key))
                 return Add(key);
@@ -76,7 +76,7 @@ namespace StoneComplier
                 return table[key];
         }
 
-        public Location Put(string key)
+        public virtual Location Put(string key)
         {
             Location loc = Get(key, 0);
             if (loc == null)
@@ -92,5 +92,66 @@ namespace StoneComplier
             return i;
         }
 
+    }
+
+    public class SymbolThis: Symbols
+    {
+        public static readonly string NAME = "this";
+        
+        public SymbolThis(Symbols outer): base(outer)
+        {
+            Add(NAME);
+        }
+
+        public override int PutInner(string key)
+        {
+            throw new StoneException("fatal");
+        }
+
+        public override Location Put(string key)
+        {
+            // 实际是存到了字段symbols里
+            Location loc = outer.Put(key);
+            if (loc.nest >= 0)
+                loc.nest++;
+            return loc;
+        }
+    }
+
+    public class MemberSymbols: Symbols
+    {
+        public static readonly int METHOD = -1;  // 固定数值代替nest，可以通过此数值判断名称是否为通常的变量名
+        public static readonly int FIELD= -2;
+
+        protected int type;
+        public MemberSymbols(Symbols outer, int type):base(outer)
+        {
+            this.type = type;
+        }
+
+        public override Location Get(string key, int nest = 0)
+        {
+            if (!table.ContainsKey(key))
+            {
+                if (outer == null)
+                    return null;
+                else
+                    return outer.Get(key, nest);   // 区别：nest不再+1
+            }
+            else
+            {
+                int index = table[key];
+                return new Location(type, index);  // type代替nest标识存储对象的类型
+            }
+        }
+
+        public override Location Put(string key)
+        {
+            Location loc = Get(key, 0);
+            if (loc == null)
+                return new Location(type, Add(key));
+            else
+                return loc;
+        }
     }
 }

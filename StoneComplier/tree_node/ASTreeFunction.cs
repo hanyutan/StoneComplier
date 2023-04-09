@@ -43,6 +43,20 @@ namespace StoneComplier
             index = symbols.PutInner(Name);                     // 将函数名存入最内层的环境（可以覆盖外层同名函数）
             size = Closure.Lookup(symbols, Parameters, Body);   // 函数里参数与局部变量的数量
         }
+
+        public void LookupAsMethod(Symbols symbols)
+        {
+            Symbols new_syms = new Symbols(symbols);
+            new_syms.PutInner(SymbolThis.NAME);
+            Parameters.Lookup(new_syms);
+            Body.Lookup(new_syms);
+            size = new_syms.Size();
+        }
+
+        public int Locals()
+        {
+            return size;
+        }
     }
 
     public class ParameterList : ASTList

@@ -6,6 +6,7 @@ namespace StoneComplier
     public class Config
     {
         public static readonly bool OptimizeVariableRW = true;
+        public static readonly bool OptimizeClassObject = true;
     }
 
     public class TestRunner
@@ -23,7 +24,7 @@ namespace StoneComplier
             //test_native_function();         // 测试原生函数
             //test_def_class();               // 测试基于类的面向对象
             //test_array();                   // 测试数组
-            test_optimization();            // 测试优化变量读写性能
+            test_optimization();   // 测试优化变量读写性能 // 测试优化对象操作性能
         }
 
         public static void test_optimization()

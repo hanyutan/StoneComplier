@@ -35,7 +35,7 @@ namespace StoneComplier
     public class OptFunction: Function
     {
         // 与Function的区别是，通过ArrayEnv对象来实现函数的执行环境
-        int size;
+        protected int size;
         public OptFunction(ParameterList parameters, BlockStatement body, Env env, int memory_size):base(null, parameters, body, env)
         {
             size = memory_size;

@@ -56,7 +56,18 @@ namespace StoneComplier
 
         public override object Eval(Env env)
         {
-            if (Config.OptimizeVariableRW)
+            if (Config.OptimizeClassObject)
+            {
+                if (index == UNKNOWN)
+                    return env.Get(Value);
+                else if (nest == MemberSymbols.FIELD)
+                    return GetThis(env).Read(index);
+                else if (nest == MemberSymbols.METHOD)
+                    return GetThis(env).GetMethod(index);
+                else
+                    return env.Get(nest, index);
+            }
+            else if (Config.OptimizeVariableRW)
             {
                 if (index == UNKNOWN)
                     return env.Get(Value);   // 新增代码时未作记录的全局变量，还按老方法用变量名查找
@@ -73,6 +84,7 @@ namespace StoneComplier
 
         public override void Lookup(Symbols symbols)
         {
+            // 作为右值
             // 通过Symbols查找变量的保存位置，将结果记录到相应的字段中
             Location loc = symbols.Get(Value);
             if (loc == null)
@@ -86,6 +98,7 @@ namespace StoneComplier
 
         public void LookupForAssign(Symbols symbols)
         {
+            // 作为左值
             Location loc = symbols.Put(Value);   // 可能是局部环境新增的变量，也可能是引用全局变量
             nest = loc.nest;
             index = loc.index;
@@ -93,12 +106,33 @@ namespace StoneComplier
 
         public void EvalForAssign(Env env, object value)
         {
-            if (index == UNKNOWN)
-                env.Put(Value, value);
+            if (Config.OptimizeClassObject)
+            {
+                if (index == UNKNOWN)
+                    env.Put(Value, value);
+                else if (nest == MemberSymbols.FIELD)
+                    GetThis(env).Write(index, value);
+                else if (nest == MemberSymbols.METHOD)
+                    throw new StoneException($"Cannot update a method: {Value}");
+                else
+                    env.Put(nest, index, value);
+            }
+            else if (Config.OptimizeVariableRW)
+            {
+                if (index == UNKNOWN)
+                    env.Put(Value, value);
+                else
+                    env.Put(nest, index, value);
+            }
             else
-                env.Put(nest, index, value);
+                throw new StoneException("Wrong call");
+
         }
 
+        protected OptStoneObject GetThis(Env env)
+        {
+            return (OptStoneObject)(env.Get(0, 0));
+        }
     }
 
     public class BinaryOp : ASTList
@@ -155,7 +189,10 @@ namespace StoneComplier
                     if (primary.GetPostfix(0) is Dot && target is StoneObject)
                     {
                         // 类的成员变量/函数赋值，调用StoneObject.Write
-                        return SetField((StoneObject)target, (Dot)primary.GetPostfix(0), rvalue);
+                        if(Config.OptimizeClassObject)
+                            return SetField((OptStoneObject)target, (Dot)primary.GetPostfix(0), rvalue);
+                        else
+                            return SetField((StoneObject)target, (Dot)primary.GetPostfix(0), rvalue);
                     }
                     else if(primary.GetPostfix(0) is ArrayRef && target is object[])
                     {
@@ -185,6 +222,20 @@ namespace StoneComplier
         }
 
         object SetField(StoneObject obj, Dot expr, object rvalue)
+        {
+            string member = expr.Name;
+            try
+            {
+                obj.Write(member, rvalue);
+                return rvalue;
+            }
+            catch
+            {
+                throw new StoneException($"BinaryOp.SetField: access memeber {member} failed", this);
+            }
+        }
+
+        object SetField(OptStoneObject obj, Dot expr, object rvalue)
         {
             string member = expr.Name;
             try
