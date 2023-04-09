@@ -166,6 +166,8 @@ namespace StoneComplier
                         throw new StoneException($"Dot: member {Name} access failed, not defined", this);
                     }
                 }
+                else
+                    throw new StoneException($"Dot: value type wrong {value.GetType().Name}", this);
             }
             else
             {
