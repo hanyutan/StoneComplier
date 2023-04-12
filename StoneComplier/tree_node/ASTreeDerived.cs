@@ -120,7 +120,7 @@ namespace StoneComplier
             else if (Config.OptimizeVariableRW)
             {
                 if (index == UNKNOWN)
-                    env.Put(Value, value);
+                    env.Put(Value, value);    // 可能是新增代码的全局变量，还未记录index；或者是类对象里的成员
                 else
                     env.Put(nest, index, value);
             }
@@ -150,6 +150,10 @@ namespace StoneComplier
         public string Operator => Children[1].ToString();
 
         public ASTree Right => Children[2];
+
+        // for inline cache
+        protected OptClassInfo class_info = null;
+        protected int index;
 
         public override object Eval(Env env)
         {
@@ -240,8 +244,24 @@ namespace StoneComplier
             string member = expr.Name;
             try
             {
-                obj.Write(member, rvalue);
-                return rvalue;
+                if(Config.OptimizeInlineCache)
+                {
+                    if(obj.GetClassInfo() != class_info)
+                    {
+                        class_info = obj.GetClassInfo();
+                        int i = class_info.GetFieldIndex(member);
+                        if(i < 0)
+                            throw new StoneException($"BinaryOp.SetField: access memeber {member} failed", this);
+                        index = i;
+                    }
+                    obj.Write(index, rvalue);
+                    return rvalue;
+                }
+                else
+                {
+                    obj.Write(member, rvalue);
+                    return rvalue;
+                }
             }
             catch
             {

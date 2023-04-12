@@ -15,14 +15,14 @@ namespace StoneComplier
 
         public override object Eval(Env env)
         {
-            // 执行类定义中的每个语句，将成员添加进env
+            // new一个类，执行构造函数(类定义)中的每个语句，将成员添加进env
             // todo 可能会有点问题，如果有成员变量与全局环境中的变量同名，这样写会直接修改全局变量
             // 可能的措施：为member成员独立搞个语法树节点，重新定义Eval，直接加进局部环境
             if(Config.OptimizeClassObject)
             {
                 foreach (var child in Children)
                     if(child is not DefStatement)
-                        child.Eval(env);
+                        child.Eval(env);    // 只计算字段值，存到OptStoneObject的fields里；字段名和方法名已经在ClassStatement->Eval、Body->Lookup方法中，存进field names和methodDef里了
             }
             else
             {
@@ -45,12 +45,12 @@ namespace StoneComplier
                     if (i >= old_size)
                         methods.Add(def);   // 新增函数
                     else
-                        methods[i] = def; // 覆盖同名函数
+                        methods[i] = def;   // 覆盖同名函数
                     def.LookupAsMethod(field_names);
                 }
                 else
                 {
-                    child.Lookup(syms);
+                    child.Lookup(syms);     // 字段名会通过SymbolThis->outer存进field_names中，question 为什么不直接field_names.PutInner呢？？
                 }
             }
         }
@@ -135,6 +135,11 @@ namespace StoneComplier
             return "." + Name;
         }
 
+        // for inline cache
+        protected OptClassInfo class_info = null;
+        protected bool is_field;
+        protected int index;
+
         public override object Eval(Env env, object value)
         {
             // 此函数由PrimaryExpr.EvalNestPostfix函数直接调用
@@ -148,7 +153,7 @@ namespace StoneComplier
                         OptClassInfo info = (OptClassInfo)value;
                         ArrayEnv new_env = new ArrayEnv(1, info.Environment);
                         OptStoneObject obj = new OptStoneObject(info, info.GetFieldsSize());
-                        new_env.Put(0, 0, obj);
+                        new_env.Put(0, 0, obj);  // obj的局部环境，只存一个this指向自己即可，用于在IdName根据index(-1/-2)查找时GetThis
                         InitObject(info, obj, new_env);
                         return obj;
                     }
@@ -159,7 +164,18 @@ namespace StoneComplier
                 {
                     try
                     {
-                        return ((OptStoneObject)value).Read(Name);
+                        OptStoneObject target = (OptStoneObject)value;
+                        if (Config.OptimizeInlineCache)
+                        {
+                            if (target.GetClassInfo() != class_info)
+                                UpdateCache(target);
+                            if (is_field)
+                                return target.Read(index);
+                            else
+                                return target.GetMethod(index);  // 为啥还要把字段和方法分开呢？Read里面不是处理过了吗？
+                        }
+                        else
+                            return target.Read(Name);
                     }
                     catch
                     {
@@ -202,6 +218,28 @@ namespace StoneComplier
                 else
                     throw new StoneException($"Dot: value type wrong {value.GetType().Name}", this);
             }
+        }
+
+        // 没有提供lookup实现，因为.引用字段或方法时，只有在程序执行时才能确定对象的类型，进而得到字段或方法的存储位置index
+
+        protected void UpdateCache(OptStoneObject target)
+        {
+            class_info = target.GetClassInfo();
+            int i = class_info.GetFieldIndex(Name);
+            if(i >= 0)
+            {
+                is_field = true;
+                index = i;
+                return;
+            }
+            i = class_info.GetMethodIndex(Name);
+            if(i >= 0)
+            {
+                is_field = false;
+                index = i;
+                return;
+            }
+            throw new StoneException($"Dot: member {Name} access failed, not defined", this);
         }
 
         void InitObject(ClassInfo info, Env env)

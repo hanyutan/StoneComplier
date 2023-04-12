@@ -66,12 +66,12 @@ namespace StoneComplier
         {
             // 读取字段值或方法对象
             int index = class_info.GetFieldIndex(name);
-            if (index > 0)
+            if (index >= 0)
                 return fields[index];
             else
             {
                 index = class_info.GetMethodIndex(name);
-                if (index > 0)
+                if (index >= 0)
                     return GetMethod(index);
             }
 

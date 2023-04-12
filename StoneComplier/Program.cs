@@ -7,6 +7,7 @@ namespace StoneComplier
     {
         public static readonly bool OptimizeVariableRW = true;
         public static readonly bool OptimizeClassObject = true;
+        public static readonly bool OptimizeInlineCache = true;
     }
 
     public class TestRunner
@@ -31,7 +32,8 @@ namespace StoneComplier
         {
             var env = new ResizableArrayEnv();
             Natives.ToNativeEnv(env);
-            run("def_function", new FuncParser(), env);
+            //run("def_function", new FuncParser(), env);
+            run("optimize_class", new FuncParser(), env);
         }
 
         public static void test_array()

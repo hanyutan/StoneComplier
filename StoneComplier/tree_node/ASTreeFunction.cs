@@ -28,14 +28,15 @@ namespace StoneComplier
         public override object Eval(Env env)
         {
             // 函数定义阶段，创建函数对象，并添加到全局环境
-            if (Config.OptimizeVariableRW)
-                env.Put(0, index, new OptFunction(Parameters, Body, env, size));
+            if (Config.OptimizeVariableRW && index != UNKNOWN)
+                env.Put(0, index, new OptFunction(Parameters, Body, env, size));   // lookup阶段只是记录符号表，确定index位置，eval阶段才是真正创建函数对象并存入环境
             else
                 env.Put(Name, new Function(Name, Parameters, Body, env));
             return Name;
         }
 
-        int index;     // 函数在全局环境中的索引
+        static readonly int UNKNOWN = -1;
+        int index = UNKNOWN;     // 函数在全局环境中的索引
         int size;      // 函数里参数与局部变量的数量
 
         public override void Lookup(Symbols symbols)
@@ -71,7 +72,7 @@ namespace StoneComplier
         public void Eval(Env env, int index, object value)
         {
             // 寻找第几个形参名，将实参值添加进局部环境
-            if (Config.OptimizeVariableRW)
+            if (Config.OptimizeVariableRW && offsets != null)
                 env.Put(0, offsets[index], value);
             else
             {
